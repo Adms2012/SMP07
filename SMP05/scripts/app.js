@@ -1,5 +1,5 @@
-define(["jQuery", "kendo", "kendoIndexedListView", "data", "config", "utils", "cart", "home-layout", "base-layout", "artists-view", "genres-view", "albums-view", "search-view", "cart-view", "checkout-view", "account-view", "about-view"],
-       function($, kendo,  x,                       data,   config,   utils,   cart,   homeLayout,    baseLayout,    artistsView,    genresView,    albumsView,    searchView,    cartView,    checkoutView,    accountView, aboutView) {
+define(["jQuery", "kendo", "kendoIndexedListView", "data", "config", "utils", "cart", "home-layout", "base-layout", "artists-view", "genres-view", "hairServices-view", "albums-view", "search-view", "cart-view", "checkout-view", "account-view", "about-view"],
+       function($, kendo,  x,                       data,   config,   utils,   cart,   homeLayout,    baseLayout,    artistsView,    genresView,  hairServicesView,   albumsView,    searchView,    cartView,    checkoutView,    accountView, aboutView) {
 
     var _onError = function (error, url, line) {
         utils.showError(error);
@@ -10,7 +10,7 @@ define(["jQuery", "kendo", "kendoIndexedListView", "data", "config", "utils", "c
 
         var kendoApp = new kendo.mobile.Application(document.body, {
             transition: "fade",
-            initial: "about-view",
+            initial: "hairServices-view",
             loading: '<h1 class="loading-message">Loading...</h1>'
         });
         utils.init(kendoApp);
@@ -26,6 +26,7 @@ define(["jQuery", "kendo", "kendoIndexedListView", "data", "config", "utils", "c
         albumsView: albumsView,
         artistsView: artistsView,
         genresView: genresView,
+        hairServicesView: hairServicesView,
         searchView: searchView,
         cartView: cartView,
         checkoutView: checkoutView,

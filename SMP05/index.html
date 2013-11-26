@@ -13,6 +13,10 @@
 
 		<!-- Home Views -->
 
+		<div data-role="view" id="hairServices-view" data-layout="home-layout" data-title="Hair" data-model="app.hairServicesView.viewModel" data-show="app.hairServicesView.onShow">
+			<ul data-role="listview" data-bind="source: hairServices" data-template="hairServices-list-template" data-style="inset"></ul>
+		</div>
+        
 		<div data-role="view" id="genres-view" data-layout="home-layout" data-title="Albums" data-model="app.genresView.viewModel" data-show="app.genresView.onShow">
 			<ul data-role="listview" data-bind="source: genres" data-template="genre-list-template" data-style="inset"></ul>
 		</div>
@@ -38,7 +42,8 @@
 					<span data-role="view-title"></span>
 				</div>
 				<ul class="select-group">
-					<li data-target="#genres-view">Genres</li>
+					<li data-target="#hairServices-view">Hair</li>
+					<!--li data-target="#genres-view">Genres</li-->
 					<li data-target="#artists-view">Artists</li>
 				</ul>
 			</header>
@@ -410,6 +415,10 @@
 
 		<!-- Templates -->
 
+        <script id="hairServices-list-template" type="text/x-kendo-template">
+			<a href="\#servicesDetail-view?field=serviceID&operator=eq&value=#=serviceID#&title=#:encodeURIComponent(serviceName).replace("'", "%27")#">#=serviceName#</a>
+		</script>
+        
 		<script id="genre-list-template" type="text/x-kendo-template">
 			<a href="\#albums-view?field=GenreId&operator=eq&value=#=GenreId#&title=#:encodeURIComponent(Name).replace("'", "%27")#">#=Name#</a>
 		</script>

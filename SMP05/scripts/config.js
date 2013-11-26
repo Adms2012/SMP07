@@ -6,7 +6,7 @@ define([], function () {
     return {
         domain: domain,
         serverUrl: serverUrl,
-        serviceUrl: serviceUrl,
+        hairServiceUrl: "https://script.google.com/macros/s/AKfycbypiAmszdLTpnEAcA3U_kuWvwDBZizHV7e4Sl6qAHoduooBx-5l/exec?id=0AiE_AinARYzYdDk4aVk2ODN2clpLdFVIaEktTlhMRXc&sheet=ServicesHair",
         genresUrl: serviceUrl + "/Genres",
         artistsUrl: serviceUrl + "/Artists",
         albumsUrl: serviceUrl + "/Albums",

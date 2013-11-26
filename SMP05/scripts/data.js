@@ -43,8 +43,23 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
         clear: function (dataSource) {
             dataSource.view().splice(0, dataSource.view().length);
         },
+
+
         
         genresList: new kendo.data.DataSource(new DataSourceConfig(config.genresUrl, "Name")),
+
+        hairServicesList: new kendo.data.DataSource ({
+            transport: {
+                        read: {
+                         url: "https://script.google.com/macros/s/AKfycbypiAmszdLTpnEAcA3U_kuWvwDBZizHV7e4Sl6qAHoduooBx-5l/exec?id=0AiE_AinARYzYdDk4aVk2ODN2clpLdFVIaEktTlhMRXc&sheet=ServicesHair",
+                         dataType: "json"
+                               }
+                      },
+            schema: {
+                data: "ServicesHair"               
+                    }
+        }),
+        
         
         artistsList: new kendo.data.DataSource(new DataSourceConfig(config.artistsUrl, "Name", {
             serverFiltering: true,
