@@ -4,7 +4,7 @@
     <ProjectGuid>bbbc04f5-79e5-4381-8e0e-1f19ca32d44d</ProjectGuid>
     <ProjectTypeGuids>{070BCB52-5A75-4F8C-A973-144AF0EAFCC9}</ProjectTypeGuids>
     <AppIdentifier>com.telerik.KendoMusicStore</AppIdentifier>
-    <ProjectName>SMP05</ProjectName>
+    <ProjectName>SMP06</ProjectName>
     <IsRunnable>true</IsRunnable>
     <AndroidPermissions>android.permission.ACCESS_LOCATION_EXTRA_COMMANDS;android.permission.INTERNET;android.permission.WRITE_EXTERNAL_STORAGE;android.permission.ACCESS_NETWORK_STATE</AndroidPermissions>
     <DeviceOrientations>Portrait;Landscape</DeviceOrientations>
