@@ -60,6 +60,18 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
                     }
         }),
         
+        serviceItems: new kendo.data.DataSource ({
+            transport: {
+                        read: {
+                         url: "https://script.google.com/macros/s/AKfycbypiAmszdLTpnEAcA3U_kuWvwDBZizHV7e4Sl6qAHoduooBx-5l/exec?id=0AiE_AinARYzYdDk4aVk2ODN2clpLdFVIaEktTlhMRXc&sheet=ServicesItems",
+                         dataType: "json"
+                               }
+                      },
+            schema: {
+                data: "ServicesItems"               
+                    }
+        }),
+        
         
         artistsList: new kendo.data.DataSource(new DataSourceConfig(config.artistsUrl, "Name", {
             serverFiltering: true,

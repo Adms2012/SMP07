@@ -36,6 +36,17 @@
 			<ul id="albums-listview" data-role="listview" data-bind="source: albums" data-auto-bind="false" data-template="album-list-template" data-style="inset" data-endless-scroll="true"></ul>
 		</div>
 
+		<div data-role="view" id="serviceItems-view" data-layout="base-layout" data-model="app.serviceItemsView.viewModel" data-show="app.serviceItemsView.show" data-transition="slide:left" style="display: none;">
+			<header data-role="header">
+				<div data-role="navbar">
+					<a class="nav-button" data-align="left" data-role="backbutton">Back</a>
+					<span data-role="view-title"></span>
+				</div>
+			</header>
+
+			<ul id="serviceItems-listview" data-role="listview" data-bind="source: serviceItems" data-auto-bind="false" data-template="serviceItem-list-template" data-style="inset" data-endless-scroll="true"></ul>
+		</div>
+        
 		<div data-role="layout" data-id="home-layout" data-init="app.homeLayout.init" data-show="app.homeLayout.show">
 			<header data-role="header">
 				<div data-role="navbar">
@@ -416,7 +427,7 @@
 		<!-- Templates -->
 
         <script id="hairServices-list-template" type="text/x-kendo-template">
-			<a href="\#servicesDetail-view?field=serviceID&operator=eq&value=#=serviceID#&title=#:encodeURIComponent(serviceName).replace("'", "%27")#">#=serviceName#</a>
+			<a href="\#serviceItems-view?field=serviceID&operator=eq&value=#=serviceID#&title=#:encodeURIComponent(serviceName).replace("'", "%27")#">#=serviceName#</a>
 		</script>
         
 		<script id="genre-list-template" type="text/x-kendo-template">
@@ -436,7 +447,17 @@
 			<h2 class="album-artist" data-bind="text: Artist.Name"></h2>
 			<span class="album-price" data-bind="text: albumPrice"></span>
 		</script>
-			
+
+		<script id="serviceItem-list-template" type="text/x-kendo-template">
+			<div class="album-cart" data-role="button" data-bind="click: onAddToCart">
+				<span data-bind="text: qtyInCart, attr: {class: buttonClasses}"></span><span class="km-icon km-cart"></span>
+			</div>
+			<h1 class="album-title" data-bind="text: serviceItemDescription"></h1>
+			<h2 class="album-artist" data-bind="text: serviceItemNotes"></h2>
+			<span class="album-price" data-bind="text: serviceItemUnitPrice"></span>
+		</script>
+
+        
 		<script id="artist-filter-template" type="text/x-kendo-template">
 			<a href="\#artists-view?value=#=data#" id="#=data#">#=data#</a>
 		</script>

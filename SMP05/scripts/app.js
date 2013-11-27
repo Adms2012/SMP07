@@ -1,5 +1,5 @@
-define(["jQuery", "kendo", "kendoIndexedListView", "data", "config", "utils", "cart", "home-layout", "base-layout", "artists-view", "genres-view", "hairServices-view", "albums-view", "search-view", "cart-view", "checkout-view", "account-view", "about-view"],
-       function($, kendo,  x,                       data,   config,   utils,   cart,   homeLayout,    baseLayout,    artistsView,    genresView,  hairServicesView,   albumsView,    searchView,    cartView,    checkoutView,    accountView, aboutView) {
+define(["jQuery", "kendo", "kendoIndexedListView", "data", "config", "utils", "cart", "home-layout", "base-layout", "artists-view", "genres-view", "hairServices-view", "albums-view", "serviceItems-view", "search-view", "cart-view", "checkout-view", "account-view", "about-view"],
+       function($, kendo,  x,                       data,   config,   utils,   cart,   homeLayout,    baseLayout,    artistsView,    genresView,  hairServicesView,   albumsView, serviceItemsView,   searchView,    cartView,    checkoutView,    accountView, aboutView) {
 
     var _onError = function (error, url, line) {
         utils.showError(error);
@@ -27,6 +27,7 @@ define(["jQuery", "kendo", "kendoIndexedListView", "data", "config", "utils", "c
         artistsView: artistsView,
         genresView: genresView,
         hairServicesView: hairServicesView,
+        serviceItemsView: serviceItemsView,
         searchView: searchView,
         cartView: cartView,
         checkoutView: checkoutView,
