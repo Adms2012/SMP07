@@ -1,0 +1,51 @@
+[
+    {
+    userID: "TestUser",
+    serviceID: 1,
+    serviceCategory: "Hair",
+    serviceName: "Man Haircut",
+    serviceDescription: "Man Haircut"
+    },
+    {
+    userID: "TestUser",
+    serviceID: 2,
+    serviceCategory: "Hair",
+    serviceName: "Woman Haircut",
+    serviceDescription: "Woman Haircut"
+    },
+    {
+    userID: "TestUser",
+    serviceID: 3,
+    serviceCategory: "Hair",
+    serviceName: "Child Haircut",
+    serviceDescription: "Child Haircut"
+    },
+    {
+    userID: "TestUser",
+    serviceID: 4,
+    serviceCategory: "Hair",
+    serviceName: "Man Color",
+    serviceDescription: "Man Color"
+    },
+    {
+    userID: "TestUser",
+    serviceID: 5,
+    serviceCategory: "Hair",
+    serviceName: "Woman Color",
+    serviceDescription: "Woman Color"
+    },
+    {
+    userID: "TestUser",
+    serviceID: 6,
+    serviceCategory: "Hair",
+    serviceName: "Child Color",
+    serviceDescription: "Child Color"
+    },
+    {
+    userID: "TestUser",
+    serviceID: 7,
+    serviceCategory: "Hair",
+    serviceName: "Shampoo",
+    serviceDescription: "Shampoo"
+    }
+    ]
