@@ -20,11 +20,15 @@
 		<div data-role="view" id="genres-view" data-layout="home-layout" data-title="Albums" data-model="app.genresView.viewModel" data-show="app.genresView.onShow">
 			<ul data-role="listview" data-bind="source: genres" data-template="genre-list-template" data-style="inset"></ul>
 		</div>
-
+        
+        <div data-role="view" id="nailServices-view" data-layout="home-layout" data-title="Nails" data-model="app.nailServicesView.viewModel" class="km-insetcontent" style="display: none;">
+			<ul data-role="indexedlistview" data-bind="source: nailServices" data-template="nailServices-list-template" data-fixed-headers="true" data-style="inset"></ul>
+		</div>
+        
 		<div data-role="view" id="artists-view" data-layout="home-layout" data-title="Albums" data-model="app.artistsView.viewModel" class="km-insetcontent" style="display: none;">
 			<ul data-role="indexedlistview" data-bind="source: artists" data-template="artist-list-template" data-fixed-headers="true"></ul>
 		</div>
-
+        
 		<div data-role="view" id="albums-view" data-layout="base-layout" data-model="app.albumsView.viewModel" data-show="app.albumsView.show" data-transition="slide:left" style="display: none;">
 			<header data-role="header">
 				<div data-role="navbar">
@@ -55,13 +59,15 @@
 				<ul class="select-group">
 					<li data-target="#hairServices-view">Hair</li>
 					<!--li data-target="#genres-view">Genres</li-->
-					<li data-target="#artists-view">Artists</li>
+					<!--li data-target="#artists-view">Artists</li-->
+                    <li data-target="#nailServices-view">Nails</li>
 				</ul>
 			</header>
 
 			<div data-role="footer">
 				<div data-role="tabstrip">
-					<a href="#genres-view" data-icon="home">Home</a>
+					<!--a href="#genres-view" data-icon="home">Home</a-->
+                    <a href="#hairServices-view" data-icon="home">Home</a>
 					<a href="#search-view" data-icon="search">Search</a>
 					<a href="#cart-view" data-icon="cart">
 						Cart<span class="cart-badge km-badge" style="display: none;"></span>
@@ -84,8 +90,10 @@
 					</div>
 				</div>
 				<div data-role="tabstrip">
-					<a href="#genres-view">Genres</a>
-					<a href="#artists-view">Artists</a>
+					<!--a href="#genres-view">Genres</a-->
+					<!--a href="#artists-view">Artists</a-->
+                    <a href="#hairServices-view">Hair</a>
+					<a href="#nailServices-view">Nails</a>
 				</div>
 			</div>
 
@@ -117,7 +125,8 @@
 			</header>
 			<div data-role="footer">
 				<div data-role="tabstrip">
-					<a href="#genres-view" data-icon="home">Home</a>
+					<!--a href="#genres-view" data-icon="home">Home</a-->
+                    <a href="#hairServices-view" data-icon="home">Home</a>
 					<a href="#search-view" data-icon="search">Search</a>
 					<a href="#cart-view" data-icon="cart">
 						Cart<span class="cart-badge km-badge" style="display: none;"></span>
@@ -216,7 +225,8 @@
 		<div data-role="layout" data-id="cart-layout" data-show="app.cartView.layoutShow" data-platform="ios">
 			<div data-role="footer">
 				<div data-role="tabstrip">
-					<a href="#genres-view" data-icon="home">Home</a>
+					<!--a href="#genres-view" data-icon="home">Home</a-->
+                    <a href="#hairServices-view" data-icon="home">Home</a>
 					<a href="#search-view" data-icon="search">Search</a>
 					<a href="#cart-view" data-icon="cart">
 						Cart<span class="cart-badge km-badge" style="display: none;"></span>
@@ -236,7 +246,8 @@
 
 			<div data-role="footer">
 				<div data-role="tabstrip">
-					<a href="#genres-view" data-icon="home">Home</a>
+					<!--a href="#genres-view" data-icon="home">Home</a-->
+                    <a href="#hairServices-view" data-icon="home">Home</a>
 					<a href="#search-view" data-icon="search">Search</a>
 					<a href="#cart-view" data-icon="cart">
 						Cart<span class="cart-badge km-badge" style="display: none;"></span>
@@ -301,7 +312,8 @@
 			</header>
 			<div data-role="footer">
 				<div data-role="tabstrip">
-					<a href="#genres-view" data-icon="home">Home</a>
+					<!--a href="#genres-view" data-icon="home">Home</a-->
+                    <a href="#hairServices-view" data-icon="home">Home</a>
 					<a href="#search-view" data-icon="search">Search</a>
 					<a href="#cart-view" data-icon="cart">
 						Cart<span class="cart-badge km-badge" style="display: none;"></span>
@@ -363,7 +375,8 @@
 		<div data-role="layout" data-id="about-layout" data-show="app.baseLayout.show">
 			<div data-role="footer">
 				<div data-role="tabstrip">
-					<a href="#genres-view" data-icon="home">Home</a>
+					<!--a href="#genres-view" data-icon="home">Home</a-->
+                    <a href="#hairServices-view" data-icon="home">Home</a>
 					<a href="#search-view" data-icon="search">Search</a>
 					<a href="#cart-view" data-icon="cart">
 						Cart<span class="cart-badge km-badge" style="display: none;"></span>
@@ -377,7 +390,8 @@
 		<div data-role="layout" data-id="about-layout" data-platform="android" data-show="app.baseLayout.show">
 			<header data-role="header">
 				<div data-role="navbar">
-					<a href="#genres-view" class="nav-button" data-align="left" data-role="backbutton"></a>
+                    <!--a href="#genres-view" class="nav-button" data-align="left" data-role="backbutton"></a-->
+					<a href="#hairServices-view" class="nav-button" data-align="left" data-role="backbutton"></a>
 					<span data-role="view-title"></span>
 					<div data-align="right" class="action-buttons">
 						<a data-role="button" href="#home-view" data-icon="home"></a>
@@ -404,7 +418,8 @@
 		<div data-role="layout" data-id="base-layout" data-show="app.baseLayout.show">
 			<div data-role="footer">
 				<div data-role="tabstrip">
-					<a href="#genres-view" data-icon="home">Home</a>
+					<!--a href="#genres-view" data-icon="home">Home</a-->
+                    <a href="#hairServices-view" data-icon="home">Home</a>
 					<a href="#search-view" data-icon="search">Search</a>
 					<a href="#cart-view" data-icon="cart">
 						Cart<span class="cart-badge km-badge" style="display: none;"></span>
@@ -434,6 +449,10 @@
 			<a href="\#albums-view?field=GenreId&operator=eq&value=#=GenreId#&title=#:encodeURIComponent(Name).replace("'", "%27")#">#=Name#</a>
 		</script>
 
+        <script id="nailServices-list-template" type="text/x-kendo-template">
+			<a href="\#servicesDetail-view?field=serviceID&operator=eq&value=#=serviceID#&title=#:encodeURIComponent(serviceName).replace("'", "%27")#">#=serviceName#</a>
+		</script>
+        
 		<script id="artist-list-template" type="text/x-kendo-template">
 			<a href="\#albums-view?field=ArtistId&operator=eq&value=#=ArtistId#&title=#:encodeURIComponent(Name).replace("'", "%27")#">#=Name#</a>
 		</script>

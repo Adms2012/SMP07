@@ -93,6 +93,18 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
             }
         })),
 
+        nailServicesList: new kendo.data.DataSource ({
+            transport: {
+                        read: {
+                         url: "https://script.google.com/macros/s/AKfycbypiAmszdLTpnEAcA3U_kuWvwDBZizHV7e4Sl6qAHoduooBx-5l/exec?id=0AiE_AinARYzYdDk4aVk2ODN2clpLdFVIaEktTlhMRXc&sheet=ServicesNails",
+                         dataType: "json"
+                               }
+                      },
+            schema: {
+                data: "ServicesNails"               
+                    }
+        }),
+        
         albumsList: new EndlessScrollDataSource(new DataSourceConfig(config.albumsUrl + "?$expand=Artist", "Title", {
             serverPaging: true,
             serverFiltering: true,
