@@ -21,8 +21,8 @@
 			<ul data-role="listview" data-bind="source: genres" data-template="genre-list-template" data-style="inset"></ul>
 		</div>
         
-        <div data-role="view" id="nailServices-view" data-layout="home-layout" data-title="Nails" data-model="app.nailServicesView.viewModel" class="km-insetcontent" style="display: none;">
-			<ul data-role="indexedlistview" data-bind="source: nailServices" data-template="nailServices-list-template" data-fixed-headers="true" data-style="inset"></ul>
+        <div data-role="view" id="nailServices-view" data-layout="home-layout" data-title="Nails" data-model="app.nailServicesView.viewModel"  >
+			<ul data-role="listview" data-bind="source: nailServices" data-template="nailServices-list-template" data-fixed-headers="true" data-style="inset"></ul>
 		</div>
         
 		<div data-role="view" id="artists-view" data-layout="home-layout" data-title="Albums" data-model="app.artistsView.viewModel" class="km-insetcontent" style="display: none;">
@@ -450,7 +450,7 @@
 		</script>
 
         <script id="nailServices-list-template" type="text/x-kendo-template">
-			<a href="\#servicesDetail-view?field=serviceID&operator=eq&value=#=serviceID#&title=#:encodeURIComponent(serviceName).replace("'", "%27")#">#=serviceName#</a>
+			<a href="\#serviceItems-view?field=serviceID&operator=eq&value=#=serviceID#&title=#:encodeURIComponent(serviceName).replace("'", "%27")#">#=serviceName#</a>
 		</script>
         
 		<script id="artist-list-template" type="text/x-kendo-template">
