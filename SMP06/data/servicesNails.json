@@ -1,44 +1,44 @@
  [
     {
-    userID: "TestUser",
-    serviceID: 8,
-    serviceCategory: "Nails",
-    serviceName: "Full set",
-    serviceDescription: "Full set"
+    "userID": "TestUser",
+    "serviceID": 8,
+    "serviceCategory": "Nails",
+    "serviceName": "Full set",
+    "serviceDescription": "Full set"
     },
     {
-    userID: "TestUser",
-    serviceID: 9,
-    serviceCategory: "Nails",
-    serviceName: "Fill",
-    serviceDescription: "Fill"
+    "userID": "TestUser",
+    "serviceID": 9,
+    "serviceCategory": "Nails",
+    "serviceName": "Fill",
+    "serviceDescription": "Fill"
     },
     {
-    userID: "TestUser",
-    serviceID: 10,
-    serviceCategory: "Nails",
-    serviceName: "Manicure",
-    serviceDescription: "Manicure"
+    "userID": "TestUser",
+    "serviceID": 10,
+    "serviceCategory": "Nails",
+    "serviceName": "Manicure",
+    "serviceDescription": "Manicure"
     },
     {
-    userID: "TestUser",
-    serviceID: 11,
-    serviceCategory: "Nails",
-    serviceName: "Pedicure",
-    serviceDescription: "Pedicure"
+    "userID": "TestUser",
+    "serviceID": 11,
+    "serviceCategory": "Nails",
+    "serviceName": "Pedicure",
+    "serviceDescription": "Pedicure"
     },
     {
-    userID: "TestUser",
-    serviceID: 12,
-    serviceCategory: "Nails",
-    serviceName: "French set",
-    serviceDescription: "French set"
+    "userID": "TestUser",
+    "serviceID": 12,
+    "serviceCategory": "Nails",
+    "serviceName": "French set",
+    "serviceDescription": "French set"
     },
     {
-    userID: "TestUser",
-    serviceID: 13,
-    serviceCategory: "Nails",
-    serviceName: "Polish",
-    serviceDescription: "Polish"
+    "userID": "TestUser",
+    "serviceID": 13,
+    "serviceCategory": "Nails",
+    "serviceName": "Polish",
+    "serviceDescription": "Polish"
     }
 ]

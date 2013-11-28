@@ -48,7 +48,38 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
         
         genresList: new kendo.data.DataSource(new DataSourceConfig(config.genresUrl, "Name")),
 
-        hairServicesList: new kendo.data.DataSource ({
+ 
+
+       nailServicesList: new kendo.data.DataSource({
+                transport: {
+                    read:     {
+                        url: "data/servicesNails.json",
+                        dataType: "json"
+                            }
+                          }
+         })  ,      
+        
+       hairServicesList: new kendo.data.DataSource({
+                transport: {
+                    read:     {
+                        url: "data/servicesHair.json",
+                        dataType: "json"
+                                }
+                            }
+         })  ,      
+
+       serviceItems: new kendo.data.DataSource({
+                transport: {
+                    read: {
+                        url: "data/servicesItems.json",
+                        dataType: "json"
+                    }
+                }
+         })  ,      
+        
+
+
+       hairServicesList1: new kendo.data.DataSource ({
             transport: {
                         read: {
                          url: "https://script.google.com/macros/s/AKfycbypiAmszdLTpnEAcA3U_kuWvwDBZizHV7e4Sl6qAHoduooBx-5l/exec?id=0AiE_AinARYzYdDk4aVk2ODN2clpLdFVIaEktTlhMRXc&sheet=ServicesHair",
@@ -59,7 +90,7 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
                 data: "ServicesHair"               
                     }
         }),
-        nailServicesList: new kendo.data.DataSource ({
+        nailServicesList1: new kendo.data.DataSource ({
             transport: {
                         read: {
                          url: "https://script.google.com/macros/s/AKfycbypiAmszdLTpnEAcA3U_kuWvwDBZizHV7e4Sl6qAHoduooBx-5l/exec?id=0AiE_AinARYzYdDk4aVk2ODN2clpLdFVIaEktTlhMRXc&sheet=ServicesNails",
@@ -70,7 +101,7 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
                 data: "ServicesNails"               
                     }
         }),
-        serviceItems: new kendo.data.DataSource ({
+        serviceItems1: new kendo.data.DataSource ({
             transport: {
                         read: {
                          url: "https://script.google.com/macros/s/AKfycbypiAmszdLTpnEAcA3U_kuWvwDBZizHV7e4Sl6qAHoduooBx-5l/exec?id=0AiE_AinARYzYdDk4aVk2ODN2clpLdFVIaEktTlhMRXc&sheet=ServicesItems",
@@ -81,35 +112,7 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
                 data: "ServicesItems"               
                     }
         }),
-        
-
-       nailsServicesList2: new kendo.data.DataSource({
-                transport: {
-                    read: {
-                        url: "data/servicesNails.json",
-                        dataType: "json"
-                    }
-                }
-         })  ,      
-        
-       hairServicesList2: new kendo.data.DataSource({
-                transport: {
-                    read: {
-                        url: "data/servicesHair.json",
-                        dataType: "json"
-                    }
-                }
-         })  ,      
-
-       serviceItems2: new kendo.data.DataSource({
-                transport: {
-                    read: {
-                        url: "data/servicesItems.json",
-                        dataType: "json"
-                    }
-                }
-         })  ,      
-        
+        	        
         
         artistsList: new kendo.data.DataSource(new DataSourceConfig(config.artistsUrl, "Name", {
             serverFiltering: true,
