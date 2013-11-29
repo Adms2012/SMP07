@@ -12,10 +12,10 @@ define(["jQuery", "kendo"], function ($, kendo) {
             data: [],
             change: function () {
                 var totalPrice = 0;
-                var albums = cartItems.data();
-                for (var i = 0; i < albums.length; i++) {
-                    var cartEntry = albums[i];
-                    totalPrice += cartEntry.get("qty") * cartEntry.get("album.Price");
+                var serviceItems = cartItems.data();
+                for (var i = 0; i < serviceItems.length; i++) {
+                    var cartEntry = serviceItems[i];
+                    totalPrice += cartEntry.get("qty") * cartEntry.get("serviceItem.serviceItemUnitPrice");
                 }
                 cartAggregates.set("total", totalPrice);
             },
@@ -24,29 +24,29 @@ define(["jQuery", "kendo"], function ($, kendo) {
                     fields: {
                         qty: { type: "number", min: 1, max: 99 },
                         deleteMode: { type: "boolean" },
-                        album: {}
+                        serviceItem: {}
                     }
                 }
             },
             aggregate: [{field: "qty", aggregate: "sum"}]
         }),
 
-        findAlbum = function (albumId) {
+        findserviceItem = function (serviceItemId) {
             var data = cartItems.data();
             for(var i = 0; i < data.length; i++) {
-                if(data[i].album.AlbumId === albumId) {
+                if(data[i].serviceItem.serviceItemId === serviceItemId) {
                     return data[i];
                 }
             }
             return undefined;
         },
 
-        addAlbum = function (album) {
-            var existing = findAlbum(album.AlbumId);
+        addserviceItem = function (serviceItem) {
+            var existing = findserviceItem(serviceItem.serviceItemId);
             if(existing) {
                 existing.set("qty", existing.qty + 1);
             } else {
-                cartItems.add({ album: $.extend(true, {}, album), qty: 1, deleteMode: false });
+                cartItems.add({ serviceItem: $.extend(true, {}, serviceItem), qty: 1, deleteMode: false });
             }
         },
 
@@ -58,8 +58,8 @@ define(["jQuery", "kendo"], function ($, kendo) {
 
     return {
         items: cartItems,
-        add: addAlbum,
-        find: findAlbum,
+        add: addserviceItem,
+        find: findserviceItem,
         aggregates: cartAggregates,
         clear: clear
     };

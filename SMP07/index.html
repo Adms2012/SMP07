@@ -468,11 +468,12 @@
 		</script>
 
 		<script id="serviceItem-list-template" type="text/x-kendo-template">
-			<div class="album-cart" data-role="button" data-bind="click: onAddToCart">
+			<img class="serviceItem-art" />
+			<div class="serviceItem-cart" data-role="button" data-bind="click: onAddServiceItemToCart">
 				<span data-bind="text: qtyInCart, attr: {class: buttonClasses}"></span><span class="km-icon km-cart"></span>
 			</div>
-			<h1 class="album-title" data-bind="text: serviceItemDescription"></h1>
-			<h2 class="album-artist" data-bind="text: serviceItemNotes"></h2>
+			<h1 class="serviceItemDesc" data-bind="text: serviceItemDescription"></h1>
+			<h2 class="serviceItemNotes" data-bind="text: serviceItemNotes"></h2>
 			<span class="album-price" data-bind="text: serviceItemUnitPrice"></span>
 		</script>
 
@@ -488,12 +489,12 @@
 					<input type="number" data-bind="value: qty, invisible: deleteMode" min="1" max="99" />
 					<span class="cart-delete-button" data-role="button" data-click="app.cartView.onRemove" data-bind="visible: deleteMode" data-icon="trash"></span>
 				</div>
-				<img class="album-art" data-bind="attr: {src: albumArtUrl}" />
-				<h1 class="album-title" data-bind="text: album.Title"></h1>
-				<h2 class="album-artist" data-bind="text: album.Artist.Name"></h2>
-				<span class="album-price" data-bind="text: albumPrice"></span>
+			    <img class="serviceItem-art" />
+				<h1 class="serviceItemDesc" data-bind="text: serviceItem.serviceItemDescription"></h1>
+				<h2 class="serviceItemNotes" data-bind="text: serviceItem.serviceItemDescription"></h2>
+				<span class="album-price" data-bind="text: serviceItem.serviceItemUnitPrice"></span>
 				<div class="subtotal">
-					Subtotal: <span data-bind="text: albumSubtotal"></span>
+					Subtotal: <span data-bind="text: serviceItemSubtotal"></span>
 				</div>
 			</div>
 		</script>

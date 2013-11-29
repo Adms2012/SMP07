@@ -1,7 +1,7 @@
 define(["kendo", "cart", "config"], function (kendo, cart, config) {
     return {
         baseserviceItemViewModel: {
-            onAddToCart: function (clickEvt) {
+            onAddServiceItemToCart: function (clickEvt) {
                 var serviceItem = clickEvt.data;
                 cart.add(serviceItem);
 

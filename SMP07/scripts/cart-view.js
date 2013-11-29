@@ -44,14 +44,14 @@ define(["jQuery", "kendo", "cart", "config", "utils"], function ($, kendo, cart,
                 return $("body").hasClass("km-android");
             },
 
-            albumPrice: function (cartItem) {
-                return kendo.toString(parseFloat(cartItem.album.get("Price")), "c");
+            serviceItemPrice: function (cartItem) {
+                return kendo.toString(parseFloat(cartItem.serviceItem.get("serviceItemUnitPrice")), "c");
             },
-            albumArtUrl: function (cartItem) {
-                return config.serverUrl + cartItem.album.get("AlbumArtUrl");
+            serviceItemArtUrl: function (cartItem) {
+                return ""; //config.serverUrl + cartItem.serviceItem.get("serviceItemArtUrl");
             },
-            albumSubtotal: function (cartItem) {
-                return kendo.toString(parseFloat(cartItem.album.get("Price")) * cartItem.get("qty"), "c");
+            serviceItemSubtotal: function (cartItem) {
+                return kendo.toString(parseFloat(cartItem.serviceItem.get("serviceItemUnitPrice")) * cartItem.get("qty"), "c");
             }
         }),
 
