@@ -18,6 +18,18 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
         $.extend(this, options || {});
     };
     
+    var DataSourceServiceItems = function (url, sortField, options) {
+        this.transport = {
+            read: url,
+            dataType: "json"
+        };
+        this.sort = {
+            field: sortField,
+            dir: "asc"
+        };
+        $.extend(this, options || {});
+    };
+    
     DataSourceConfig.prototype = {
         type: "odata",
         schema: {
@@ -77,7 +89,12 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
                 }
          })  ,      
         
-
+        serviceItemsList: new EndlessScrollDataSource(new DataSourceServiceItems("data/servicesItems.json", "serviceName", {
+            serverPaging: true,
+            serverFiltering: true,
+            serverSorting: true,
+            pageSize: 20
+        })),
 
        hairServicesList1: new kendo.data.DataSource ({
             transport: {

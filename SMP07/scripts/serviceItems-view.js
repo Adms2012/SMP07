@@ -3,7 +3,7 @@ define(["kendo", "data", "utils", "cart", "serviceItems"], function (kendo, data
         var listViewElement = $("#serviceItems-listview");
         var existingListView = listViewElement.data().kendoMobileListView;
         var viewModel = kendo.observable($.extend({
-            serviceItems: data.serviceItems
+            serviceItems: data.serviceItemsList
         }, serviceItems.baseserviceItemViewModel));
 
         if(existingListView) {
@@ -19,8 +19,8 @@ define(["kendo", "data", "utils", "cart", "serviceItems"], function (kendo, data
             utils.setViewTitle(e.sender.element, filter.title);
             utils.scrollViewToTop(e.sender.element);
 
-            data.clear(data.serviceItems);
-            data.serviceItems.filter(filter);
+            data.clear(data.serviceItemsList);
+            data.serviceItemsList.filter(filter);
 
             _createserviceItemsListView();
         }

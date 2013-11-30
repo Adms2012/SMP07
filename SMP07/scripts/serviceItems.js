@@ -10,6 +10,7 @@ define(["kendo", "cart", "config"], function (kendo, cart, config) {
                 serviceItem.set("serviceItemId", -1);
                 serviceItem.set("serviceItemId", aid);
             },
+          
             serviceItemUnitPrice: function (serviceItem) {
                 return kendo.toString(parseFloat(serviceItem.get("serviceItemUnitPrice")), "c");
             },
