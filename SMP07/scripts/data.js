@@ -91,7 +91,7 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
         
         serviceItemsList: new EndlessScrollDataSource(new DataSourceServiceItems("data/servicesItems.json", "serviceName", {
             serverPaging: true,
-            serverFiltering: true,
+            serverFiltering: false,
             serverSorting: true,
             pageSize: 20
         })),
