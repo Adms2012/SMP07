@@ -1,4 +1,4 @@
-// JayData 1.2.6
+// JayData 1.3.4
 // Dual licensed under MIT and GPL v2
 // Copyright JayStack Technologies (http://jaydata.org/licensing)
 //
@@ -6,11 +6,378 @@
 // practices to access and manipulate data from various online and offline sources.
 //
 // Credits:
-//     Hajnalka Battancs, D√°niel J√≥zsef, J√°nos Roden, L√°szl√≥ Horv√°th, P√©ter Nochta
-//     P√©ter Zentai, R√≥bert B√≥nay, Szabolcs Czinege, Viktor Borza, Viktor L√°z√°r,
-//     Zolt√°n Gyebrovszki
+//     Hajnalka Battancs, D·niel JÛzsef, J·nos Roden, L·szlÛ Horv·th, PÈter Nochta
+//     PÈter Zentai, RÛbert BÛnay, Szabolcs Czinege, Viktor Borza, Viktor L·z·r,
+//     Zolt·n Gyebrovszki, G·bor Dolla
 //
 // More info: http://jaydata.org
+$data.oDataConverter = {
+    fromDb: {
+        '$data.Byte': $data.Container.proxyConverter,
+        '$data.SByte': $data.Container.proxyConverter,
+        '$data.Decimal': $data.Container.proxyConverter,
+        '$data.Float': $data.Container.proxyConverter,
+        '$data.Int16': $data.Container.proxyConverter,
+        '$data.Int64': $data.Container.proxyConverter,
+        '$data.ObjectID': $data.Container.proxyConverter,
+        '$data.Integer': $data.Container.proxyConverter,//function (number) { return (typeof number === 'string' && /^\d+$/.test(number)) ? parseInt(number) : number; },
+        '$data.Int32': $data.Container.proxyConverter,
+        '$data.Number': $data.Container.proxyConverter,
+        '$data.Date': function (dbData) {
+            if (dbData) {
+                if (dbData instanceof Date) {
+                    return dbData;
+                } else if (dbData.substring(0, 6) === '/Date(') {
+                    return new Date(parseInt(dbData.substr(6)));
+                } else {
+                    //ISODate without Z? Safari compatible with Z
+                    if (dbData.indexOf('Z') === -1 && !dbData.match('T.*[+-]'))
+                        dbData += 'Z';
+                    return new Date(dbData);
+                }
+            } else {
+                return dbData;
+            }
+        },
+        '$data.DateTimeOffset': function (dbData) {
+            if (dbData) {
+                if (dbData instanceof Date) {
+                    return dbData;
+                } else if (dbData.substring(0, 6) === '/Date(') {
+                    return new Date(parseInt(dbData.substr(6)));
+                } else {
+                    //ISODate without Z? Safari compatible with Z
+                    if (dbData.indexOf('Z') === -1 && !dbData.match('T.*[+-]'))
+                        dbData += 'Z';
+                    return new Date(dbData);
+                }
+            } else {
+                return dbData;
+            }
+        },
+        '$data.Time': $data.Container.proxyConverter,
+        '$data.String': $data.Container.proxyConverter,
+        '$data.Boolean': $data.Container.proxyConverter,
+        '$data.Blob': function (v) {
+            if (typeof v == 'string'){
+                try { return $data.Container.convertTo(atob(v), '$data.Blob'); }
+                catch (e) { return v; }
+            }else return v;
+        },
+        '$data.Object': function (o) { if (o === undefined) { return new $data.Object(); } else if (typeof o === 'string') { return JSON.parse(o); } return o; },
+        '$data.Array': function (o) { if (o === undefined) { return new $data.Array(); } else if (o instanceof $data.Array) { return o; } return JSON.parse(o); },
+        '$data.GeographyPoint': function (g) { if (g) { return new $data.GeographyPoint(g); } return g; },
+        '$data.GeographyLineString': function (g) { if (g) { return new $data.GeographyLineString(g); } return g; },
+        '$data.GeographyPolygon': function (g) { if (g) { return new $data.GeographyPolygon(g); } return g; },
+        '$data.GeographyMultiPoint': function (g) { if (g) { return new $data.GeographyMultiPoint(g); } return g; },
+        '$data.GeographyMultiLineString': function (g) { if (g) { return new $data.GeographyMultiLineString(g); } return g; },
+        '$data.GeographyMultiPolygon': function (g) { if (g) { return new $data.GeographyMultiPolygon(g); } return g; },
+        '$data.GeographyCollection': function (g) { if (g) { return new $data.GeographyCollection(g); } return g; },
+        '$data.GeometryPoint': function (g) { if (g) { return new $data.GeometryPoint(g); } return g; },
+        '$data.GeometryLineString': function (g) { if (g) { return new $data.GeometryLineString(g); } return g; },
+        '$data.GeometryPolygon': function (g) { if (g) { return new $data.GeometryPolygon(g); } return g; },
+        '$data.GeometryMultiPoint': function (g) { if (g) { return new $data.GeometryMultiPoint(g); } return g; },
+        '$data.GeometryMultiLineString': function (g) { if (g) { return new $data.GeometryMultiLineString(g); } return g; },
+        '$data.GeometryMultiPolygon': function (g) { if (g) { return new $data.GeometryMultiPolygon(g); } return g; },
+        '$data.GeometryCollection': function (g) { if (g) { return new $data.GeometryCollection(g); } return g; },
+        '$data.Guid': function (guid) { return guid ? guid.toString() : guid; }
+    },
+    toDb: {
+        '$data.Entity': $data.Container.proxyConverter,
+        '$data.Byte': $data.Container.proxyConverter,
+        '$data.SByte': $data.Container.proxyConverter,
+        '$data.Decimal': $data.Container.proxyConverter,
+        '$data.Float': $data.Container.proxyConverter,
+        '$data.Int16': $data.Container.proxyConverter,
+        '$data.Int64': $data.Container.proxyConverter,
+        '$data.ObjectID': $data.Container.proxyConverter,
+        '$data.Integer': $data.Container.proxyConverter,
+        '$data.Int32': $data.Container.proxyConverter,
+        '$data.Number': $data.Container.proxyConverter,
+        '$data.Date': function (e) { return e ? e.toISOString().replace('Z', '') : e; },
+        '$data.Time': $data.Container.proxyConverter,
+        '$data.DateTimeOffset': function(v){ return v ? v.toISOString() : v; },
+        '$data.String': $data.Container.proxyConverter,
+        '$data.Boolean': $data.Container.proxyConverter,
+        '$data.Blob': function (v) { return v ? $data.Blob.toBase64(v) : v; },
+        '$data.Object': $data.Container.proxyConverter,
+        '$data.Array': $data.Container.proxyConverter,
+        '$data.GeographyPoint': $data.Container.proxyConverter,
+        '$data.GeographyLineString': $data.Container.proxyConverter,
+        '$data.GeographyPolygon': $data.Container.proxyConverter,
+        '$data.GeographyMultiPoint': $data.Container.proxyConverter,
+        '$data.GeographyMultiLineString': $data.Container.proxyConverter,
+        '$data.GeographyMultiPolygon': $data.Container.proxyConverter,
+        '$data.GeographyCollection': $data.Container.proxyConverter,
+        '$data.GeometryPoint': $data.Container.proxyConverter,
+        '$data.GeometryLineString': $data.Container.proxyConverter,
+        '$data.GeometryPolygon': $data.Container.proxyConverter,
+        '$data.GeometryMultiPoint': $data.Container.proxyConverter,
+        '$data.GeometryMultiLineString': $data.Container.proxyConverter,
+        '$data.GeometryMultiPolygon': $data.Container.proxyConverter,
+        '$data.GeometryCollection': $data.Container.proxyConverter,
+        '$data.Guid': $data.Container.proxyConverter
+    },
+    escape: {
+        '$data.Entity': function (e) { return JSON.stringify(e); },
+        '$data.Integer': $data.Container.proxyConverter,
+        '$data.Int32': $data.Container.proxyConverter,
+        '$data.Number': $data.Container.proxyConverter, // double: 13.5D
+        '$data.Int16': $data.Container.proxyConverter,
+        '$data.Byte': $data.Container.proxyConverter,
+        '$data.SByte': $data.Container.proxyConverter,
+        '$data.Decimal': function (v) { return v ? v + 'm' : v; },
+        '$data.Float': function (v) { return v ? v + 'f' : v; },
+        '$data.Int64': function (v) { return v ? v + 'L' : v; },
+        '$data.Time': function (v) { return v ? "time'" + v + "'" : v; },
+        '$data.DateTimeOffset': function (date) { return date ? "datetimeoffset'" + date + "'" : date; },
+        '$data.Date': function (date) { return date ? "datetime'" + date + "'" : date; },
+        '$data.String': function (text) { return typeof text === 'string' ? "'" + text.replace(/'/g, "''") + "'" : text; },
+        '$data.ObjectID': function (text) { return typeof text === 'string' ? "'" + text.replace(/'/g, "''") + "'" : text; },
+        '$data.Boolean': function (bool) { return typeof bool === 'boolean' ? bool.toString() : bool; },
+        '$data.Blob': function (b) { return b ? "X'" + $data.Blob.toHexString($data.Container.convertTo(atob(b), $data.Blob)) + "'" : b; },
+        '$data.Object': function (o) { return JSON.stringify(o); },
+        '$data.Array': function (o) { return JSON.stringify(o); },
+        '$data.GeographyPoint': function (g) { if (g) { return $data.GeographyBase.stringifyToUrl(g); } return g; },
+        '$data.GeographyLineString': function (g) { if (g) { return $data.GeographyBase.stringifyToUrl(g); } return g; },
+        '$data.GeographyPolygon': function (g) { if (g) { return $data.GeographyBase.stringifyToUrl(g); } return g; },
+        '$data.GeographyMultiPoint': function (g) { if (g) { return $data.GeographyBase.stringifyToUrl(g); } return g; },
+        '$data.GeographyMultiLineString': function (g) { if (g) { return $data.GeographyBase.stringifyToUrl(g); } return g; },
+        '$data.GeographyMultiPolygon': function (g) { if (g) { return $data.GeographyBase.stringifyToUrl(g); } return g; },
+        '$data.GeographyCollection': function (g) { if (g) { return $data.GeographyBase.stringifyToUrl(g); } return g; },
+        '$data.GeometryPoint': function (g) { if (g) { return $data.GeometryBase.stringifyToUrl(g); } return g; },
+        '$data.GeometryLineString': function (g) { if (g) { return $data.GeometryBase.stringifyToUrl(g); } return g; },
+        '$data.GeometryPolygon': function (g) { if (g) { return $data.GeometryBase.stringifyToUrl(g); } return g; },
+        '$data.GeometryMultiPoint': function (g) { if (g) { return $data.GeometryBase.stringifyToUrl(g); } return g; },
+        '$data.GeometryMultiLineString': function (g) { if (g) { return $data.GeometryBase.stringifyToUrl(g); } return g; },
+        '$data.GeometryMultiPolygon': function (g) { if (g) { return $data.GeometryBase.stringifyToUrl(g); } return g; },
+        '$data.GeometryCollection': function (g) { if (g) { return $data.GeometryBase.stringifyToUrl(g); } return g; },
+        '$data.Guid': function (guid) { return guid ? ("guid'" + guid.toString() + "'") : guid; }
+    },
+    unescape: {
+        '$data.Entity': function (v, c) {
+            var config = c || {};
+            var value = JSON.parse(v);
+            if (value && config.type) {
+                var type = Container.resolveType(config.type);
+                /*Todo converter*/
+                return new type(value, { converters: undefined });
+            }
+            return value;
+        },
+        '$data.Number': function (v) { return JSON.parse(v); },
+        '$data.Integer': function (v) { return JSON.parse(v); },
+        '$data.Int32': function (v) { return JSON.parse(v); },
+        '$data.Byte': function (v) { return JSON.parse(v); },
+        '$data.SByte': function (v) { return JSON.parse(v); },
+        '$data.Decimal': function (v) {
+            if (typeof v === 'string' && v.toLowerCase().lastIndexOf('m') === v.length - 1) {
+                return v.substr(0, v.length - 1);
+            } else {
+                return v;
+            }
+        },
+        '$data.Float': function (v) {
+            if (typeof v === 'string' && v.toLowerCase().lastIndexOf('f') === v.length - 1) {
+                return v.substr(0, v.length - 1);
+            } else {
+                return v;
+            }
+        },
+        '$data.Int16': function (v) { return JSON.parse(v); },
+        '$data.Int64': function (v) {
+            if (typeof v === 'string' && v.toLowerCase().lastIndexOf('l') === v.length - 1) {
+                return v.substr(0, v.length - 1);
+            } else {
+                return v;
+            }
+        },
+        '$data.Boolean': function (v) { return JSON.parse(v); },
+        '$data.Date': function (v) {
+            if (typeof v === 'string' && /^datetime'/.test(v)) {
+                return v.slice(9, v.length - 1);
+            }
+            return v;
+        },
+        '$data.String': function (v) {
+            if (typeof v === 'string' && v.indexOf("'") === 0 && v.lastIndexOf("'") === v.length - 1) {
+                return v.slice(1, v.length - 1);
+            } else {
+                return v;
+            }
+        },
+        '$data.ObjectID': function (v) {
+            if (typeof v === 'string' && v.indexOf("'") === 0 && v.lastIndexOf("'") === v.length - 1) {
+                return v.slice(1, v.length - 1);
+            } else {
+                return v;
+            }
+        },
+        '$data.Guid': function (v) {
+            if (/^guid'\w{8}-\w{4}-\w{4}-\w{4}-\w{12}'$/.test(v)) {
+                var data = v.slice(5, v.length - 1)
+                return $data.parseGuid(data).toString();
+            }
+            return v;
+        },
+        '$data.Array': function (v, c) {
+            var config = c || {};
+
+            var value = JSON.parse(v) || [];
+            if (value && config.elementType) {
+                var type = Container.resolveType(config.elementType);
+                var typeName = Container.resolveName(type);
+                if (type && type.isAssignableTo && type.isAssignableTo($data.Entity)) {
+                    typeName = $data.Entity.fullName;
+                }
+
+                if (Array.isArray(value)) {
+                    var converter = $data.oDataConverter.unescape[typeName];
+                    for (var i = 0; i < value.length; i++) {
+                        value[i] = converter ? converter(value[i]) : value[i];
+                    }
+                }
+                return value;
+            }
+            return value;
+        },
+        '$data.DateTimeOffset': function (v) {
+            if (typeof v === 'string' && /^datetimeoffset'/.test(v)) {
+                return $data.Container.convertTo(v.slice(15, v.length - 1), $data.DateTimeOffset);
+            }
+            return v;
+        },
+        '$data.Time': function (v) {
+            if (typeof v === 'string' && /^time'/.test(v)) {
+                return $data.Container.convertTo(v.slice(5, v.length - 1), $data.Time);
+            }
+            return v;
+        },
+        '$data.Blob': function(v){
+            if (typeof v === 'string'){
+                if (/^X'/.test(v)){
+                    return $data.Blob.createFromHexString(v.slice(2, v.length - 1));
+                }else if (/^binary'/.test(v)){
+                    return $data.Blob.createFromHexString(v.slice(7, v.length - 1));
+                }
+            }
+            return v;
+        },
+        '$data.Object': function (v) { return JSON.parse(v); },
+        '$data.GeographyPoint': function (v) {
+            if (/^geography'POINT\(/i.test(v)) {
+                var data = v.slice(10, v.length - 1);
+                return $data.GeographyBase.parseFromString(data);
+            }
+            return v;
+        },
+        '$data.GeographyPolygon': function (v) {
+            if (/^geography'POLYGON\(/i.test(v)) {
+                var data = v.slice(10, v.length - 1);
+                return $data.GeographyBase.parseFromString(data);
+            }
+            return v;
+        },
+        '$data.GeometryPoint': function (v) {
+            if (/^geometry'POINT\(/i.test(v)) {
+                var data = v.slice(9, v.length - 1);
+                return $data.GeometryBase.parseFromString(data);
+            }
+            return v;
+        },
+        '$data.GeometryPolygon': function (v) {
+            if (/^geometry'POLYGON\(/i.test(v)) {
+                var data = v.slice(9, v.length - 1);
+                return $data.GeometryBase.parseFromString(data);
+            }
+            return v;
+        }
+    },
+    xmlEscape: {
+        '$data.Byte': function (v) { return v.toString(); },
+        '$data.SByte': function (v) { return v.toString(); },
+        '$data.Decimal': function (v) { return v.toString(); },
+        '$data.Float': function (v) { return v.toString(); },
+        '$data.Int16': function (v) { return v.toString(); },
+        '$data.Int64': function (v) { return v.toString(); },
+        '$data.Integer': function (v) { return v.toString(); },
+        '$data.Int32': function (v) { return v.toString(); },
+        '$data.Boolean': function (v) { return v.toString(); },
+        '$data.Blob': function (v) { return $data.Blob.toBase64(v); },
+        '$data.Date': function (v) { return v.toISOString().replace('Z', ''); },
+        '$data.DateTimeOffset': function(v){ return v.toISOString(); },
+        '$data.Time': function (v) { return v.toString(); },
+        '$data.Number': function (v) { return v.toString(); },
+        '$data.Integer': function (v) { return v.toString(); },
+        '$data.Int32': function (v) { return v.toString(); },
+        '$data.String': function (v) { return v.toString(); },
+        '$data.ObjectID': function (v) { return v.toString(); },
+        '$data.Object': function (v) { return JSON.stringify(v); },
+        '$data.Guid': function (v) { return v.toString(); }/*,
+        '$data.GeographyPoint': function (v) { return this._buildSpatialPoint(v, 'http://www.opengis.net/def/crs/EPSG/0/4326'); },
+        '$data.GeometryPoint': function (v) { return this._buildSpatialPoint(v, 'http://www.opengis.net/def/crs/EPSG/0/0'); },
+        '$data.GeographyLineString': function (v) { return this._buildSpatialLineString(v, 'http://www.opengis.net/def/crs/EPSG/0/4326'); },
+        '$data.GeometryLineString': function (v) { return this._buildSpatialLineString(v, 'http://www.opengis.net/def/crs/EPSG/0/0'); }*/
+    },
+    simple: { //$value, $count
+        '$data.Byte': function (v) { return v.toString(); },
+        '$data.SByte': function (v) { return v.toString(); },
+        '$data.Decimal': function (v) { return v.toString(); },
+        '$data.Float': function (v) { return v.toString(); },
+        '$data.Int16': function (v) { return v.toString(); },
+        '$data.Int64': function (v) { return v.toString(); },
+        '$data.ObjectID': function (o) { return o.toString(); },
+        '$data.Integer': function (o) { return o.toString(); },
+        '$data.Int32': function (o) { return o.toString(); },
+        '$data.Number': function (o) { return o.toString(); },
+        '$data.Date': function (o) { return o instanceof $data.Date ? o.toISOString().replace('Z', '') : o.toString() },
+        '$data.DateTimeOffset': function(v){ return v ? v.toISOString() : v; },
+        '$data.Time': function (o) { return o.toString(); },
+        '$data.String': function (o) { return o.toString(); },
+        '$data.Boolean': function (o) { return o.toString(); },
+        '$data.Blob': function (o) { return o; },
+        '$data.Object': function (o) { return JSON.stringify(o); },
+        '$data.Array': function (o) { return JSON.stringify(o); },
+        '$data.Guid': function (o) { return o.toString(); },
+        '$data.GeographyPoint': function (o) { return JSON.stringify(o); },
+        '$data.GeometryPoint': function (o) { return JSON.stringify(o); },
+        '$data.GeographyLineString': function (o) { return JSON.stringify(o); },
+        '$data.GeographyPolygon': function (o) { return JSON.stringify(o); },
+        '$data.GeographyMultiPoint': function (o) { return JSON.stringify(o); },
+        '$data.GeographyMultiLineString': function (o) { return JSON.stringify(o); },
+        '$data.GeographyMultiPolygon': function (o) { return JSON.stringify(o); },
+        '$data.GeographyCollection': function (o) { return JSON.stringify(o); },
+        '$data.GeometryLineString': function (o) { return JSON.stringify(o); },
+        '$data.GeometryPolygon': function (o) { return JSON.stringify(o); },
+        '$data.GeometryMultiPoint': function (o) { return JSON.stringify(o); },
+        '$data.GeometryMultiLineString': function (o) { return JSON.stringify(o); },
+        '$data.GeometryMultiPolygon': function (o) { return JSON.stringify(o); },
+        '$data.GeometryCollection': function (o) { return JSON.stringify(o); }
+    }
+};
+
+var datajsPatch;
+datajsPatch = function () {
+    // just datajs-1.1.0
+    if (OData && OData.jsonHandler && 'useJsonLight' in OData.jsonHandler && typeof datajs === 'object' && !datajs.version) {
+        console.log('!!!!!!! - patch datajs 1.1.0');
+        var oldread = OData.defaultHandler.read;
+        OData.defaultHandler.read = function (p, context) {
+            delete context.contentType;
+            delete context.dataServiceVersion;
+
+            oldread.apply(this, arguments);
+        };
+        var oldwrite = OData.defaultHandler.write;
+        OData.defaultHandler.write = function (p, context) {
+            delete context.contentType;
+            delete context.dataServiceVersion;
+
+            oldwrite.apply(this, arguments);
+        };
+    }
+    datajsPatch = function () { };
+}
 
 $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null,
 {
@@ -18,6 +385,7 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
         if (typeof OData === 'undefined') {
             Guard.raise(new Exception('datajs is required', 'Not Found!'));
         }
+        datajsPatch();
 
         this.SqlCommands = [];
         this.context = ctx;
@@ -26,16 +394,37 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
             oDataServiceHost: "/odata.svc",
             serviceUrl: "",
             maxDataServiceVersion: '2.0',
+            dataServiceVersion: undefined,
+            setDataServiceVersionToMax: true,
             user: null,
             password: null,
             withCredentials: false,
-            enableJSONP: false
+            //enableJSONP: undefined,
+            //useJsonLight: undefined
+            //disableBatch: undefined
+            UpdateMethod: 'PATCH'
         }, cfg);
+
+        this.fixkDataServiceVersions(cfg);
+
         if (this.context && this.context._buildDbType_generateConvertToFunction && this.buildDbType_generateConvertToFunction) {
             this.context._buildDbType_generateConvertToFunction = this.buildDbType_generateConvertToFunction;
         }
         if (this.context && this.context._buildDbType_modifyInstanceDefinition && this.buildDbType_modifyInstanceDefinition) {
             this.context._buildDbType_modifyInstanceDefinition = this.buildDbType_modifyInstanceDefinition;
+        }
+    },
+    fixkDataServiceVersions: function (cfg) {
+        if (this.providerConfiguration.dataServiceVersion > this.providerConfiguration.maxDataServiceVersion) {
+            this.providerConfiguration.dataServiceVersion = this.providerConfiguration.maxDataServiceVersion;
+        }
+
+        if (this.providerConfiguration.setDataServiceVersionToMax === true) {
+            this.providerConfiguration.dataServiceVersion = this.providerConfiguration.maxDataServiceVersion;
+        }
+
+        if ((cfg && !cfg.UpdateMethod && this.providerConfiguration.dataServiceVersion < '3.0') || !this.providerConfiguration.dataServiceVersion) {
+            this.providerConfiguration.UpdateMethod = 'MERGE';
         }
     },
     initializeStore: function (callBack) {
@@ -78,7 +467,7 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
             dbInstance.entityState = logicalEntity.entityState;
 
             storageModel.PhysicalType.memberDefinitions.getPublicMappedProperties().forEach(function (property) {
-                dbInstance[property.name] = logicalEntity[property.name];
+                dbInstance.initData[property.name] = logicalEntity[property.name];
             }, this);
 
             if (storageModel.Associations) {
@@ -89,30 +478,31 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                         var refValue = logicalEntity[association.FromPropertyName];
                         if (/*refValue !== null &&*/ refValue !== undefined) {
                             if (refValue instanceof $data.Array) {
-                                dbInstance[association.FromPropertyName] = dbInstance[association.FromPropertyName] || [];
+                                dbInstance.initData[association.FromPropertyName] = dbInstance[association.FromPropertyName] || [];
                                 refValue.forEach(function (rv) {
-                                    var contentId = convertedItems.indexOf(rv);
-                                    if (contentId < 0) { Guard.raise("Dependency graph error"); }
-                                    dbInstance[association.FromPropertyName].push({ __metadata: { uri: "$" + (contentId + 1) } });
+                                    if (rv.entityState == $data.EntityState.Modified || convertedItems.indexOf(rv) < 0) {
+                                        var sMod = context._storageModel.getStorageModel(rv.getType())
+                                        var tblName = sMod.TableName;
+                                        var pk = '(' + context.storageProvider.getEntityKeysValue({ data: rv, entitySet: context.getEntitySetFromElementType(rv.getType()) }) + ')';
+                                        dbInstance.initData[association.FromPropertyName].push({ __metadata: { uri: tblName + pk } });
+                                    } else {
+                                        var contentId = convertedItems.indexOf(rv);
+                                        if (contentId < 0) { Guard.raise("Dependency graph error"); }
+                                        dbInstance.initData[association.FromPropertyName].push({ __metadata: { uri: "$" + (contentId + 1) } });
+                                    }
                                 }, this);
                             } else if (refValue === null) {
-                                dbInstance[association.FromPropertyName] = null;
+                                dbInstance.initData[association.FromPropertyName] = null;
                             } else {
-                                if (convertedItems.indexOf(refValue) < 0) {
+                                if (refValue.entityState == $data.EntityState.Modified || convertedItems.indexOf(refValue) < 0) {
                                     var sMod = context._storageModel.getStorageModel(refValue.getType())
                                     var tblName = sMod.TableName;
-                                    var pk = '(' + context.storageProvider.getEntityKeysValue({ data: refValue, entitySet: sMod.EntitySetReference }) + ')';
-                                    /*var pk = '(';
-                                    refValue.getType().memberDefinitions.getKeyProperties().forEach(function (k, index) {
-                                        if (index > 0) { pk += ','; }
-                                        pk += refValue[k.name];
-                                    }, this);
-                                    pk += ')';*/
-                                    dbInstance[association.FromPropertyName] = { __metadata: { uri: tblName + pk } };
+                                    var pk = '(' + context.storageProvider.getEntityKeysValue({ data: refValue, entitySet: context.getEntitySetFromElementType(refValue.getType()) }) + ')';
+                                    dbInstance.initData[association.FromPropertyName] = { __metadata: { uri: tblName + pk } };
                                 } else {
                                     var contentId = convertedItems.indexOf(refValue);
                                     if (contentId < 0) { Guard.raise("Dependency graph error"); }
-                                    dbInstance[association.FromPropertyName] = { __metadata: { uri: "$" + (contentId + 1) } };
+                                    dbInstance.initData[association.FromPropertyName] = { __metadata: { uri: "$" + (contentId + 1) } };
                                 }
                             }
                         }
@@ -121,12 +511,13 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
             }
             if (storageModel.ComplexTypes) {
                 storageModel.ComplexTypes.forEach(function (cmpType) {
-                    dbInstance[cmpType.FromPropertyName] = logicalEntity[cmpType.FromPropertyName];
+                    dbInstance.initData[cmpType.FromPropertyName] = logicalEntity[cmpType.FromPropertyName];
                 }, this);
             }
             return dbInstance;
         };
     },
+    buildDbType_modifyInstanceDefinition: function () { return; },
     executeQuery: function (query, callBack) {
         callBack = $data.typeSystem.createCallbackSetting(callBack);
 
@@ -139,30 +530,42 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
         }
         var schema = this.context;
 
+        var that = this;
         var requestData = [
             {
                 requestUri: this.providerConfiguration.oDataServiceHost + sql.queryText,
                 method: sql.method,
-                enableJsonpCallback: this.providerConfiguration.enableJSONP,
+                data: sql.postData,
                 headers: {
                     MaxDataServiceVersion: this.providerConfiguration.maxDataServiceVersion
                 }
             },
             function (data, textStatus, jqXHR) {
-                if (!data) data = JSON.parse(textStatus.body);
+                if (!data && textStatus.body) data = JSON.parse(textStatus.body);
                 if (callBack.success) {
-                    query.rawDataList = typeof data === 'string' ? [{ cnt: data }] : data;
-                    if (sql.withInlineCount && typeof data === 'object' && (data.__count || ('d' in data && data.d.__count))) {
-                        query.__count = new Number(data.__count || data.d.__count).valueOf();
+                    query.rawDataList = typeof data === 'string' ? [{ cnt: Container.convertTo(data, $data.Integer) }] : data;
+                    if (sql.withInlineCount && typeof data === 'object' && (typeof data.__count !== 'undefined' || ('d' in data && typeof data.d.__count !== 'undefined'))) {
+                        query.__count = new Number(typeof data.__count !== 'undefined' ? data.__count : data.d.__count).valueOf();
                     }
 
                     callBack.success(query);
                 }
             },
-            function (jqXHR, textStatus, errorThrow) {
-                callBack.error(errorThrow || new Exception('Request failed', 'RequestError', arguments));
+            function (error) {
+                callBack.error(that.parseError(error, arguments));
             }
         ];
+
+        if (this.providerConfiguration.dataServiceVersion) {
+            requestData[0].headers.DataServiceVersion = this.providerConfiguration.dataServiceVersion;
+        }
+
+        if (typeof this.providerConfiguration.enableJSONP !== 'undefined') {
+            requestData[0].enableJsonpCallback = this.providerConfiguration.enableJSONP;
+        }
+        if (typeof this.providerConfiguration.useJsonLight !== 'undefined') {
+            requestData[0].useJsonLight = this.providerConfiguration.useJsonLight;
+        }
 
         this.appendBasicAuth(requestData[0], this.providerConfiguration.user, this.providerConfiguration.password, this.providerConfiguration.withCredentials);
         //if (this.providerConfiguration.user) {
@@ -190,10 +593,17 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
         }
     },
     saveInternal: function (independentBlocks, index2, callBack) {
-        if (independentBlocks.length > 1 || (independentBlocks.length == 1 && independentBlocks[0].length > 1))
-            this._saveBatch(independentBlocks, index2, callBack);
-        else
-            this._saveRest(independentBlocks, index2, callBack);
+        if ((this.providerConfiguration.disableBatch === true || (typeof $data.defaults === 'object' && $data.defaults.disableBatch === true))
+            && typeof this._saveRestMany === 'function')
+        {
+            this._saveRestMany(independentBlocks, index2, callBack);
+        } else {
+            if (independentBlocks.length > 1 || (independentBlocks.length == 1 && independentBlocks[0].length > 1)) {
+                this._saveBatch(independentBlocks, index2, callBack);
+            } else {
+                this._saveRest(independentBlocks, index2, callBack);
+            }
+        }
     },
     _saveRest: function (independentBlocks, index2, callBack) {
         var batchRequests = [];
@@ -204,8 +614,17 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                 convertedItem.push(independentBlocks[index][i].data);
                 request = {
                     requestUri: this.providerConfiguration.oDataServiceHost + '/',
-                    headers: {}
+                    headers: {
+                        MaxDataServiceVersion: this.providerConfiguration.maxDataServiceVersion
+                    }
                 };
+                if (this.providerConfiguration.dataServiceVersion) {
+                    request.headers.DataServiceVersion = this.providerConfiguration.dataServiceVersion;
+                }
+                if (typeof this.providerConfiguration.useJsonLight !== 'undefined') {
+                    request.useJsonLight = this.providerConfiguration.useJsonLight;
+                }
+
                 //request.headers = { "Content-Id": convertedItem.length };
                 switch (independentBlocks[index][i].data.entityState) {
                     case $data.EntityState.Unchanged: continue; break;
@@ -215,7 +634,7 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                         request.data = this.save_getInitData(independentBlocks[index][i], convertedItem);
                         break;
                     case $data.EntityState.Modified:
-                        request.method = "MERGE";
+                        request.method = this.providerConfiguration.UpdateMethod;
                         request.requestUri += independentBlocks[index][i].entitySet.tableName;
                         request.requestUri += "(" + this.getEntityKeysValue(independentBlocks[index][i]) + ")";
                         this.save_addConcurrencyHeader(independentBlocks[index][i], request.headers);
@@ -235,7 +654,7 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
         var that = this;
 
         var requestData = [request, function (data, response) {
-            if (response.statusCode > 200 && response.statusCode < 300) {
+            if (response.statusCode >= 200 && response.statusCode < 300) {
                 var item = convertedItem[0];
                 if (response.statusCode == 204) {
                     if (response.headers.ETag || response.headers.Etag || response.headers.etag) {
@@ -245,28 +664,18 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                         }
                     }
                 } else {
-                    item.getType().memberDefinitions.getPublicMappedProperties().forEach(function (memDef) {
-                        var propType = Container.resolveType(memDef.type);
-                        if (memDef.computed || memDef.key || (!propType.isAssignableto && !memDef.inverseProperty)) {
-                            if (memDef.concurrencyMode === $data.ConcurrencyMode.Fixed) {
-                                item[memDef.name] = response.headers.ETag || response.headers.Etag || response.headers.etag;
-                            } else {
-                                var converter = that.fieldConverter.fromDb[Container.resolveName(memDef.type)];
-                                item[memDef.name] = converter ? converter(data[memDef.name]) : data[memDef.name];
-                            }
-                        }
-                    }, this);
+                    that.reload_fromResponse(item, data, response);
                 }
 
                 if (callBack.success) {
                     callBack.success(convertedItem.length);
                 }
             } else {
-                callBack.error(response);
+                callBack.error(that.parseError(response));
             }
 
         }, function (e) {
-            callBack.error(new Exception((e.response || {}).body, e.message, e));
+            callBack.error(that.parseError(e));
         }];
 
         this.appendBasicAuth(requestData[0], this.providerConfiguration.user, this.providerConfiguration.password, this.providerConfiguration.withCredentials);
@@ -285,7 +694,10 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
             for (var i = 0; i < independentBlocks[index].length; i++) {
                 convertedItem.push(independentBlocks[index][i].data);
                 var request = {};
-                request.headers = { "Content-Id": convertedItem.length };
+                request.headers = {
+                    "Content-Id": convertedItem.length,
+                    MaxDataServiceVersion: this.providerConfiguration.maxDataServiceVersion
+                };
                 switch (independentBlocks[index][i].data.entityState) {
                     case $data.EntityState.Unchanged: continue; break;
                     case $data.EntityState.Added:
@@ -294,7 +706,7 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                         request.data = this.save_getInitData(independentBlocks[index][i], convertedItem);
                         break;
                     case $data.EntityState.Modified:
-                        request.method = "MERGE";
+                        request.method = this.providerConfiguration.UpdateMethod;
                         request.requestUri = independentBlocks[index][i].entitySet.tableName;
                         request.requestUri += "(" + this.getEntityKeysValue(independentBlocks[index][i]) + ")";
                         this.save_addConcurrencyHeader(independentBlocks[index][i], request.headers);
@@ -308,6 +720,10 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                         break;
                     default: Guard.raise(new Exception("Not supported Entity state"));
                 }
+
+                if (this.providerConfiguration.dataServiceVersion) {
+                    request.headers.DataServiceVersion = this.providerConfiguration.dataServiceVersion;
+                }
                 batchRequests.push(request);
             }
         }
@@ -318,6 +734,9 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
             method: "POST",
             data: {
                 __batchRequests: [{ __changeRequests: batchRequests }]
+            },
+            headers: {
+                MaxDataServiceVersion: this.providerConfiguration.maxDataServiceVersion
             }
         }, function (data, response) {
             if (response.statusCode == 202) {
@@ -325,7 +744,7 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                 var errors = [];
 
                 for (var i = 0; i < result.length; i++) {
-                    if (result[i].statusCode > 200 && result[i].statusCode < 300) {
+                    if (result[i].statusCode >= 200 && result[i].statusCode < 300) {
                         var item = convertedItem[i];
                         if (result[i].statusCode == 204) {
                             if (result[i].headers.ETag || result[i].headers.Etag || result[i].headers.etag) {
@@ -337,35 +756,34 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                             continue;
                         }
 
-                        item.getType().memberDefinitions.getPublicMappedProperties().forEach(function (memDef) {
-                            //TODO: is this correct?
-                            var propType = Container.resolveType(memDef.type);
-                            if (memDef.computed || memDef.key || (!propType.isAssignableto && !memDef.inverseProperty)) {
-                                if (memDef.concurrencyMode === $data.ConcurrencyMode.Fixed) {
-                                    item[memDef.name] = result[i].headers.ETag || result[i].headers.Etag || result[i].headers.etag;
-                                } else {
-                                    var converter = that.fieldConverter.fromDb[Container.resolveName(memDef.type)];
-                                    item[memDef.name] = converter ? converter(result[i].data[memDef.name]) : result[i].data[memDef.name];
-                                }
-                            }
-                        }, this);
-
+                        that.reload_fromResponse(item, result[i].data, result[i]);
                     } else {
-                        errors.push(new Exception((result[i].response || {}).body, result[i].message, result[i]));
+                        errors.push(that.parseError(result[i]));
                     }
                 }
                 if (errors.length > 0) {
-                    callBack.error(new Exception('See inner exceptions','Batch failed', errors));
+                    if (errors.length === 1) {
+                        callBack.error(errors[0]);
+                    } else {
+                        callBack.error(new Exception('See inner exceptions', 'Batch failed', errors));
+                    }
                 } else if (callBack.success) {
                     callBack.success(convertedItem.length);
                 }
             } else {
-                callBack.error(response);
+                callBack.error(that.parseError(response));
             }
 
         }, function (e) {
-            callBack.error(new Exception((e.response || {}).body, e.message, e));
+            callBack.error(that.parseError(e));
         }, OData.batchHandler];
+
+        if (this.providerConfiguration.dataServiceVersion) {
+            requestData[0].headers.DataServiceVersion = this.providerConfiguration.dataServiceVersion;
+        }
+        if (typeof this.providerConfiguration.useJsonLight !== 'undefined') {
+            requestData[0].useJsonLight = this.providerConfiguration.useJsonLight;
+        }
 
         this.appendBasicAuth(requestData[0], this.providerConfiguration.user, this.providerConfiguration.password, this.providerConfiguration.withCredentials);
         //if (this.providerConfiguration.user) {
@@ -376,13 +794,63 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
         this.context.prepareRequest.call(this, requestData);
         OData.request.apply(this, requestData);
     },
+    reload_fromResponse: function (item, data, response) {
+        var that = this;
+        item.getType().memberDefinitions.getPublicMappedProperties().forEach(function (memDef) {
+            var propType = Container.resolveType(memDef.type);
+            if (memDef.computed || memDef.key || !memDef.inverseProperty) {
+                if (memDef.concurrencyMode === $data.ConcurrencyMode.Fixed) {
+                    //unescape?
+                    item[memDef.name] = response.headers.ETag || response.headers.Etag || response.headers.etag;
+
+                } else if (memDef.isAssignableTo) {
+                    if (data[memDef.name]) {
+                        item[memDef.name] = new propType(data[memDef.name], { converters: that.fieldConverter.fromDb });
+                    } else {
+                        item[memDef.name] = data[memDef.name]
+                    }
+
+                } else if (propType === $data.Array && memDef.elementType) {
+                    var aeType = Container.resolveType(memDef.elementType);
+                    if (data[memDef.name] && Array.isArray(data[memDef.name])) {
+                        var arrayProperty = [];
+                        for (var ap = 0; ap < data[memDef.name].length; ap++) {
+                            var aitem = data[memDef.name][ap];
+                            if (aeType.isAssignableTo && !Object.isNullOrUndefined(aitem)) {
+                                arrayProperty.push(new aeType(aitem, { converters: that.fieldConverter.fromDb }));
+                            } else {
+                                var etypeName = Container.resolveName(aeType);
+                                var econverter = that.fieldConverter.fromDb[etypeName];
+
+                                arrayProperty.push(econverter ? econverter(aitem) : aitem);
+                            }
+                        }
+                        item[memDef.name] = arrayProperty;
+                    } else if (!data[memDef.name]) {
+                        item[memDef.name] = data[memDef.name]
+                    }
+
+                } else {
+                    var typeName = Container.resolveName(memDef.type);
+                    var converter = that.fieldConverter.fromDb[typeName];
+
+                    item[memDef.name] = converter ? converter(data[memDef.name]) : data[memDef.name];
+                }
+            }
+        }, this);
+    },
+
     save_getInitData: function (item, convertedItems) {
+        var self = this;
         item.physicalData = this.context._storageModel.getStorageModel(item.data.getType()).PhysicalType.convertTo(item.data, convertedItems);
         var serializableObject = {}
         item.physicalData.getType().memberDefinitions.asArray().forEach(function (memdef) {
             if (memdef.kind == $data.MemberTypes.navProperty || memdef.kind == $data.MemberTypes.complexProperty || (memdef.kind == $data.MemberTypes.property && !memdef.notMapped)) {
-                if (typeof memdef.concurrencyMode === 'undefined' && (memdef.key === true || item.data.entityState === $data.EntityState.Added || item.data.changedProperties.some(function(def){ return def.name === memdef.name; })))
-                    serializableObject[memdef.name] = item.physicalData[memdef.name];
+                if (typeof memdef.concurrencyMode === 'undefined' && (memdef.key === true || item.data.entityState === $data.EntityState.Added || item.data.changedProperties.some(function (def) { return def.name === memdef.name; }))) {
+                    var typeName = Container.resolveName(memdef.type);
+                    var converter = self.fieldConverter.toDb[typeName];
+                    serializableObject[memdef.name] = converter ? converter(item.physicalData[memdef.name]) : item.physicalData[memdef.name];
+                }
             }
         }, this);
         return serializableObject;
@@ -398,7 +866,13 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
         var sqlText = this._compile(queryable);
         return queryable;
     },
-    supportedDataTypes: { value: [$data.Integer, $data.String, $data.Number, $data.Blob, $data.Boolean, $data.Date, $data.Object, $data.Geography, $data.Guid], writable: false },
+    supportedDataTypes: {
+        value: [$data.Array, $data.Integer, $data.String, $data.Number, $data.Blob, $data.Boolean, $data.Date, $data.Object, $data.GeographyPoint, $data.Guid,
+            $data.GeographyLineString, $data.GeographyPolygon, $data.GeographyMultiPoint, $data.GeographyMultiLineString, $data.GeographyMultiPolygon, $data.GeographyCollection,
+            $data.GeometryPoint, $data.GeometryLineString, $data.GeometryPolygon, $data.GeometryMultiPoint, $data.GeometryMultiLineString, $data.GeometryMultiPolygon, $data.GeometryCollection,
+            $data.Byte, $data.SByte, $data.Decimal, $data.Float, $data.Int16, $data.Int32, $data.Int64, $data.Time, $data.DateTimeOffset],
+        writable: false
+    },
 
     supportedBinaryOperators: {
         value: {
@@ -452,10 +926,26 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
                 parameters: [{ name: "@expression", dataType: "string" }, { name: "strFragment", dataType: "string" }]
             },
 
-            length: {
+            length: [{
+                allowedType: 'string',
                 dataType: "number", allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.ProjectionExpression],
                 parameters: [{ name: "@expression", dataType: "string" }]
             },
+            {
+                allowedType: 'GeographyLineString',
+                mapTo: "geo.length",
+                dataType: "number", allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.OrderExpression],
+                parameters: [{ name: "@expression", dataType: ['GeographyLineString'] }],
+                fixedDataType: 'decimal'
+            },
+            {
+                allowedType: 'GeometryLineString',
+                mapTo: "geo.length",
+                dataType: "number", allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.OrderExpression],
+                parameters: [{ name: "@expression", dataType: 'GeometryLineString' }],
+                fixedDataType: 'decimal'
+            }],
+
             strLength: {
                 mapTo: "length",
                 dataType: "number", allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.ProjectionExpression],
@@ -544,7 +1034,37 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
             ceiling: {
                 allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.OrderExpression],
                 parameters: [{ name: "@expression", dataType: "date" }]
-            }
+            },
+
+
+            /* geo functions */
+            distance: [{
+                allowedType: 'GeographyPoint',
+                mapTo: "geo.distance",
+                dataType: "number", allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.OrderExpression],
+                parameters: [{ name: "@expression", dataType: 'GeographyPoint' }, { name: "to", dataType: 'GeographyPoint' }],
+                fixedDataType: 'decimal'
+            }, {
+                allowedType: 'GeometryPoint',
+                mapTo: "geo.distance",
+                dataType: "number", allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.OrderExpression],
+                parameters: [{ name: "@expression", dataType: 'GeometryPoint' }, { name: "to", dataType: 'GeometryPoint' }],
+                fixedDataType: 'decimal'
+            }],
+
+            intersects: [{
+                allowedType: 'GeographyPoint',
+                mapTo: "geo.intersects",
+                dataType: "boolean", allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.OrderExpression],
+                parameters: [{ name: "@expression", dataType: 'GeographyPoint' }, { name: "in", dataType: 'GeographyPolygon' }]
+
+            }, {
+                allowedType: 'GeometryPoint',
+                mapTo: "geo.intersects",
+                dataType: "boolean", allowedIn: [$data.Expressions.FilterExpression, $data.Expressions.OrderExpression],
+                parameters: [{ name: "@expression", dataType: 'GeometryPoint' }, { name: "in", dataType: 'GeometryPolygon' }]
+
+            }]
         },
         enumerable: true,
         writable: true
@@ -578,89 +1098,74 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
             first: {},
             include: {},
             batchDelete: {},
-            withInlineCount: {}
+            withInlineCount: {},
+            find: {}
         },
         enumerable: true,
         writable: true
     },
-    fieldConverter: {
-        value: {
-            fromDb: {
-                '$data.Integer': function (number) { return (typeof number === 'string' && /^\d+$/.test(number)) ? parseInt(number) : number; },
-                '$data.Number': function (number) { return number; },
-                '$data.Date': function (dbData) { return dbData ? new Date(parseInt(dbData.substr(6))) : dbData; },
-                '$data.String': function (text) { return text; },
-                '$data.Boolean': function (bool) { return bool; },
-                '$data.Blob': function (blob) { return blob; },
-                '$data.Object': function (o) { if (o === undefined) { return new $data.Object(); } else if (typeof o === 'string') { return JSON.parse(o); } return o; },
-                '$data.Array': function (o) { if (o === undefined) { return new $data.Array(); } else if (o instanceof $data.Array) { return o; } return JSON.parse(o); },
-                '$data.Geography': function (geo) {
-                    if (geo && typeof geo === 'object' && Array.isArray(geo.coordinates)) {
-                        return new $data.Geography(geo.coordinates[0], geo.coordinates[1]);
-                    }
-                    return geo;
-                },
-                '$data.Guid': function (guid) { return guid ? new $data.Guid(guid) : guid; }
-            },
-            toDb: {
-                '$data.Entity': function (e) { return "'" + JSON.stringify(e.initData) + "'" },
-                '$data.Integer': function (number) { return number; },
-                '$data.Number': function (number) { return number % 1 == 0 ? number : number + 'm'; },
-                '$data.Date': function (date) { return date ? "datetime'" + date.toISOString() + "'" : null; },
-                '$data.String': function (text) { return "'" + text.replace(/'/g, "''") + "'"; },
-                '$data.Boolean': function (bool) { return bool ? 'true' : 'false'; },
-                '$data.Blob': function (blob) { return blob; },
-                '$data.Object': function (o) { return JSON.stringify(o); },
-                '$data.Array': function (o) { return JSON.stringify(o); },
-                '$data.Geography': function (geo) {
-                    /*POINT(-127.89734578345 45.234534534)*/
-                    if (geo instanceof $data.Geography)
-                        return 'POINT(' + geo.longitude + ' ' + geo.latitude + ')';
-                    return geo;
-                },
-                '$data.Guid': function (guid) { return guid ? ("guid'" + guid.value + "'") : guid; }
-}
+    fieldConverter: { value: $data.oDataConverter },
+    resolveTypeOperations: function (operation, expression, frameType) {
+        var memDef = expression.entityType.getMemberDefinition(operation);
+        if (!memDef ||
+            !memDef.method ||
+            memDef.method.IsSideEffecting !== false ||
+            !memDef.method.returnType ||
+            !(frameType === $data.Expressions.FilterExpression || frameType === $data.Expressions.OrderExpression))
+        {
+            Guard.raise(new Exception("Entity '" + expression.entityType.name + "' Operation '" + operation + "' is not supported by the provider"));
         }
+
+        return memDef;
     },
+    resolveSetOperations: function (operation, expression, frameType) {
+        if (expression) {
+            var esDef = expression.storageModel.ContextType.getMemberDefinition(expression.storageModel.ItemName);
+            if (esDef && esDef.actions && esDef.actions[operation]) {
+                var memDef = $data.MemberDefinition.translateDefinition(esDef.actions[operation], operation, this.getType());
+                if (!memDef ||
+                    !memDef.method ||
+                    memDef.method.IsSideEffecting !== false ||
+                    !memDef.method.returnType ||
+                    !(frameType === $data.Expressions.FilterExpression || frameType === $data.Expressions.OrderExpression)) {
+
+                    Guard.raise(new Exception("Collection '" + expression.storageModel.ItemName + "' Operation '" + operation + "' is not supported by the provider"));
+                }
+
+                return memDef;
+            }
+        }
+        return $data.StorageProviderBase.prototype.resolveSetOperations.apply(this, arguments);
+
+    },
+    resolveContextOperations: function (operation, expression, frameType) {
+        var memDef = this.context.getType().getMemberDefinition(operation);
+        if (!memDef ||
+            !memDef.method ||
+            memDef.method.IsSideEffecting !== false ||
+            !memDef.method.returnType ||
+            !(frameType === $data.Expressions.FilterExpression || frameType === $data.Expressions.OrderExpression)) {
+            Guard.raise(new Exception("Context '" + expression.instance.getType().name + "' Operation '" + operation + "' is not supported by the provider"));
+        }
+        return memDef;
+    },
+
     getEntityKeysValue: function (entity) {
         var result = [];
         var keyValue = undefined;
-        var memDefs = entity.entitySet.createNew.memberDefinitions.asArray();
+        var memDefs = entity.data.getType().memberDefinitions.getKeyProperties();
         for (var i = 0, l = memDefs.length; i < l; i++) {
             var field = memDefs[i];
             if (field.key) {
                 keyValue = entity.data[field.name];
-                switch (Container.getName(field.dataType)) {
-                    case "$data.Guid":
-                    case "Edm.Guid":
-                        keyValue = ("guid'" + (keyValue ? keyValue.value : keyValue)  + "'");
-                        break;
-                    case "$data.Blob":
-                    case "Edm.Binary":
-                        keyValue = ("binary'" + keyValue + "'");
-                        break;
-                    case "Edm.Byte":
-                        var hexDigits = '0123456789ABCDEF';
-                        keyValue = (hexDigits[(i >> 4) & 15] + hexDigits[i & 15]);
-                        break;
-                    case "$data.Date":
-                    case "Edm.DateTime":
-                        keyValue = ("datetime'" + keyValue.toISOString() + "'");
-                        break;
-                    case "Edm.Decimal":
-                        keyValue = (keyValue + "M");
-                        break;
-                    case "Edm.Single":
-                        keyValue = (keyValue + "f");
-                        break;
-                    case "Edm.Int64":
-                        keyValue = (keyValue + "L");
-                        break;
-                    case 'Edm.String':
-                    case "$data.String":
-                        keyValue = ("'" + keyValue + "'");
-                        break;
-                }
+                var typeName = Container.resolveName(field.type);
+
+                var converter = this.fieldConverter.toDb[typeName];
+                keyValue = converter ? converter(keyValue) : keyValue;
+
+                converter = this.fieldConverter.escape[typeName];
+                keyValue = converter ? converter(keyValue) : keyValue;
+
                 result.push(field.name + "=" + keyValue);
             }
         }
@@ -668,6 +1173,14 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
             return result.join(",");
         }
         return keyValue;
+    },
+    getFieldUrl: function (entity, fieldName, entitySet) {
+        var keyPart = this.getEntityKeysValue({ data: entity });
+        var servicehost = this.providerConfiguration.oDataServiceHost
+        if (servicehost.lastIndexOf('/') === servicehost.length)
+            servicehost = servicehost.substring(0, servicehost.length - 1);
+
+        return servicehost + '/' + entitySet.tableName + '(' + keyPart + ')/' + fieldName + '/$value';
     },/*
     getServiceMetadata: function () {
         $data.ajax(this._setAjaxAuthHeader({
@@ -705,10 +1218,27 @@ $C('$data.storageProviders.oData.oDataProvider', $data.StorageProviderBase, null
         }
     }
     */
+    parseError: function(error, data){
+
+        var message = (error.response || error || {}).body || '';
+        try {
+            if(message.indexOf('{') === 0){
+                var errorObj = JSON.parse(message);
+                errorObj = errorObj['odata.error'] || errorObj.error || errorObj;
+                if (errorObj.message) {
+                    message = errorObj.message.value || errorObj.message;
+                }
+            }
+        } catch (e) {}
+
+        return new Exception(message, error.message, data || error);
+    },
     appendBasicAuth: function (request, user, password, withCredentials) {
         request.headers = request.headers || {};
         if (!request.headers.Authorization && user && password) {
             request.headers.Authorization = "Basic " + this.__encodeBase64(user + ":" + password);
+        }
+        if (withCredentials){
             request.withCredentials = withCredentials;
         }
     },
@@ -782,7 +1312,7 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
         var queryText = queryFragments.urlText;
         var addAmp = false;
         for (var name in queryFragments) {
-            if (name != "urlText" && name != "actionPack" && name != "data" && name != "lambda" && name != "method" && queryFragments[name] != "") {
+            if (name != "urlText" && name != "actionPack" && name != "data" && name != "lambda" && name != "method" && name != "postData" && queryFragments[name] != "") {
                 if (addAmp) { queryText += "&"; } else { queryText += "?"; }
                 addAmp = true;
                 if(name != "$urlParams"){
@@ -793,11 +1323,13 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
             }
         }
         query.queryText = queryText;
+        query.postData = queryFragments.postData;
         
         return {
             queryText: queryText,
             withInlineCount: '$inlinecount' in queryFragments,
             method: queryFragments.method || 'GET',
+            postData: queryFragments.postData,
             params: []
         };
     },
@@ -810,7 +1342,7 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
     VisitPagingExpression: function (expression, context) {
         this.Visit(expression.source, context);
 
-        var pagingCompiler = Container.createoDataPagingCompiler();
+        var pagingCompiler = Container.createoDataPagingCompiler(this.provider);
         pagingCompiler.compile(expression, context);
     },
     VisitIncludeExpression: function (expression, context) {
@@ -837,6 +1369,36 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
                 storageModel = this.mainEntitySet.entityContext._storageModel.getStorageModel(association.ToType);
             }
         }
+    },
+    VisitFindExpression: function (expression, context) {
+        this.Visit(expression.source, context);
+        context.urlText += '(';
+        if (expression.params.length === 1) {
+            var param = expression.params[0];
+            var typeName = Container.resolveName(param.type);
+
+            var converter = this.provider.fieldConverter.toDb[typeName];
+            var value = converter ? converter(param.value) : param.value;
+
+            converter = this.provider.fieldConverter.escape[typeName];
+            value = converter ? converter(param.value) : param.value;
+            context.urlText += value;
+        } else {
+            for (var i = 0; i < expression.params.length; i++) {
+                var param = expression.params[i];
+                var typeName = Container.resolveName(param.type);
+
+                var converter = this.provider.fieldConverter.toDb[typeName];
+                var value = converter ? converter(param.value) : param.value;
+
+                converter = this.provider.fieldConverter.escape[typeName];
+                value = converter ? converter(param.value) : param.value;
+
+                if (i > 0) context.urlText += ',';
+                context.urlText += param.name + '=' + value;
+            }
+        }
+        context.urlText += ')';
     },
     VisitProjectionExpression: function (expression, context) {
         this.Visit(expression.source, context);
@@ -870,7 +1432,15 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
         }
     },
     VisitServiceOperationExpression: function (expression, context) {
+        if (expression.boundItem) {
+            context.urlText += "/" + expression.boundItem.entitySet.tableName;
+            if (expression.boundItem.data instanceof $data.Entity) {
+                context.urlText += '(' + this.provider.getEntityKeysValue(expression.boundItem) + ')';
+            }
+        }
         context.urlText += "/" + expression.cfg.serviceName;
+        context.method = context.method || expression.cfg.method;
+
         //this.logicalType = expression.returnType;
         if (expression.params) {
             for (var i = 0; i < expression.params.length; i++) {
@@ -885,16 +1455,26 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
     },
 
     VisitConstantExpression: function (expression, context) {
-        if (context['$urlParams']) { context['$urlParams'] += '&'; } else { context['$urlParams'] = ''; }
+        var typeName = Container.resolveName(expression.type);
+        if (expression.value instanceof $data.Entity)
+            typeName = $data.Entity.fullName;
 
-        var value;
-        if (expression.value instanceof $data.Entity) {
-            value = this.provider.fieldConverter.toDb['$data.Entity'](expression.value);
+        var converter = this.provider.fieldConverter.toDb[typeName];
+        var value = converter ? converter(expression.value) : expression.value;
+        
+
+        if (context.method === 'GET' || !context.method) {
+            converter = this.provider.fieldConverter.escape[typeName];
+            value = converter ? converter(value) : value;
+
+            if (value !== undefined) {
+                if (context['$urlParams']) { context['$urlParams'] += '&'; } else { context['$urlParams'] = ''; }
+                context['$urlParams'] += expression.name + '=' + value;
+            }
         } else {
-            var valueType = Container.getTypeName(expression.value);
-            value = this.provider.fieldConverter.toDb[Container.resolveName(Container.resolveType(valueType))](expression.value);
+            context.postData = context.postData || {};
+            context.postData[expression.name] = value;
         }
-        context['$urlParams'] += expression.name + '=' + value;
     },
 //    VisitConstantExpression: function (expression, context) {
 //        if (context['$urlParams']) { context['$urlParams'] += '&'; } else { context['$urlParams'] = ''; }
@@ -946,7 +1526,7 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
             var eqResolution = { mapTo: "eq", dataType: "boolean", name: "equal" };
 
             paramValue.forEach(function (item) {
-                var idValue = Container.createConstantExpression(item);
+                var idValue = item;
                 var idCheck = Container.createSimpleBinaryExpression(expression.left, idValue,
                     $data.Expressions.ExpressionType.Equal, "==", "boolean", eqResolution);
                 if (result) {
@@ -988,7 +1568,13 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
     },
 
     VisitQueryParameterExpression: function (expression, context) {
-        context.data += this.provider.fieldConverter.toDb[expression.type](expression.value);
+        var typeName = Container.resolveName(expression.type);
+
+        var converter = this.provider.fieldConverter.toDb[typeName];
+        var value = converter ? converter(expression.value) : expression.value;
+
+        converter = this.provider.fieldConverter.escape[typeName];
+        context.data += converter ? converter(value) : value;
     },
 
     VisitEntityFieldOperationExpression: function (expression, context) {
@@ -1018,10 +1604,51 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
         }, this);
         context.data += ")";
     },
+    VisitEntityFunctionOperationExpression: function (expression, context) {
+        Guard.requireType("expression.operation", expression.operation, $data.Expressions.MemberInfoExpression);
+        this.Visit(expression.source, context);
+
+        //TODO refactor!
+        var opDef = expression.operation.memberDefinition;
+        var opName = opDef.mapTo || opDef.name;
+        context.data += opName;
+        context.data += "(";
+        var paramCounter = 0;
+        var params = opDef.method.params || [{ name: "@expression" }];
+
+        var args = params.map(function (item, index) {
+            if (item.name === "@expression") {
+                return expression.source;
+            } else {
+                return expression.parameters[paramCounter++]
+            };
+        });
+        var i = 0;
+        args.forEach(function (arg, index) {
+            if (arg === undefined || (arg instanceof $data.Expressions.ConstantExpression && typeof arg.value === 'undefined'))
+                return;
+
+            if (i > 0) {
+                context.data += ",";
+            };
+            i++;
+            context.data += params[index].name + '=';
+            this.Visit(arg, context);
+        }, this);
+        context.data += ")";
+    },
+    VisitContextFunctionOperationExpression: function (expression, context) {
+        return this.VisitEntityFunctionOperationExpression(expression, context);
+    },
 
     VisitConstantExpression: function (expression, context) {
-        var valueType = Container.getTypeName(expression.value);
-        context.data += this.provider.fieldConverter.toDb[Container.resolveName(Container.resolveType(valueType))](expression.value);
+        var typeName = Container.resolveName(expression.type);
+
+        var converter = this.provider.fieldConverter.toDb[typeName];
+        var value = converter ? converter(expression.value) : expression.value;
+
+        converter = this.provider.fieldConverter.escape[typeName];
+        context.data += converter ? converter(value) : value;
     },
 
     VisitEntityExpression: function (expression, context) {
@@ -1124,6 +1751,70 @@ $C('$data.storageProviders.oData.oDataCompiler', $data.Expressions.EntityExpress
     },
     VisitMemberInfoExpression: function (expression, context) {
         context.data += expression.memberName;
+    },
+    VisitEntityFieldOperationExpression: function (expression, context) {
+        Guard.requireType("expression.operation", expression.operation, $data.Expressions.MemberInfoExpression);
+
+        //TODO refactor!
+        var opDef = expression.operation.memberDefinition;
+        var opName = opDef.mapTo || opDef.name;
+        context.data += opName;
+        context.data += "(";
+        var paramCounter = 0;
+        var params = opDef.parameters || [{ name: "@expression" }];
+
+        var args = params.map(function (item, index) {
+            if (item.name === "@expression") {
+                return expression.source;
+            } else {
+                return expression.parameters[paramCounter++]
+            };
+        });
+
+        args.forEach(function (arg, index) {
+            if (index > 0) {
+                context.data += ",";
+            };
+            this.Visit(arg, context);
+        }, this);
+        context.data += ")";
+    },
+    VisitEntityFunctionOperationExpression: function (expression, context) {
+        Guard.requireType("expression.operation", expression.operation, $data.Expressions.MemberInfoExpression);
+        this.Visit(expression.source, context);
+
+        //TODO refactor!
+        var opDef = expression.operation.memberDefinition;
+        var opName = opDef.mapTo || opDef.name;
+        context.data += opName;
+        context.data += "(";
+        var paramCounter = 0;
+        var params = opDef.method.params || [{ name: "@expression" }];
+
+        var args = params.map(function (item, index) {
+            if (item.name === "@expression") {
+                return expression.source;
+            } else {
+                return expression.parameters[paramCounter++]
+            };
+        });
+
+        var i = 0;
+        args.forEach(function (arg, index) {
+            if (arg === undefined || (arg instanceof $data.Expressions.ConstantExpression && typeof arg.value === 'undefined'))
+                return;
+
+            if (i > 0) {
+                context.data += ",";
+            };
+            i++;
+            context.data += params[index].name + '=';
+            this.Visit(arg, context);
+        }, this);
+        context.data += ")";
+    },
+    VisitContextFunctionOperationExpression: function (expression, context) {
+        return this.VisitEntityFunctionOperationExpression(expression, context);
     }
 });
 $C('$data.storageProviders.oData.oDataPagingCompiler', $data.Expressions.EntityExpressionVisitor, null, {
@@ -1144,7 +1835,9 @@ $C('$data.storageProviders.oData.oDataPagingCompiler', $data.Expressions.EntityE
         }
     },
     VisitConstantExpression: function (expression, context) {
-        context.data += expression.value;
+        var typeName = Container.resolveName(expression.type);
+        var converter = this.provider.fieldConverter.escape[typeName];
+        context.data += converter ? converter(expression.value) : expression.value;
     }
 });
 $C('$data.storageProviders.oData.oDataProjectionCompiler', $data.Expressions.EntityExpressionVisitor, null, {

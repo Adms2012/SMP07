@@ -1,4 +1,31 @@
+// JayData 1.3.4
+// Dual licensed under MIT and GPL v2
+// Copyright JayStack Technologies (http://jaydata.org/licensing)
+//
+// JayData is a standards-based, cross-platform Javascript library and a set of
+// practices to access and manipulate data from various online and offline sources.
+//
+// Credits:
+//     Hajnalka Battancs, Dániel József, János Roden, László Horváth, Péter Nochta
+//     Péter Zentai, Róbert Bónay, Szabolcs Czinege, Viktor Borza, Viktor Lázár,
+//     Zoltán Gyebrovszki, Gábor Dolla
+//
+// More info: http://jaydata.org
 (function ($data) {
+
+    /*converters*/
+    Object.keys($data.Container.converters.to).forEach(function (typeName) {
+        var origConverter = $data.Container.converters.to[typeName] ? $data.Container.converters.to[typeName]['$data.Function'] || $data.Container.converters.to[typeName]['default'] : undefined;
+        $data.Container.registerConverter(typeName, '$data.Function', function (value) {
+            if (ko.isObservable(value)) {
+                return value;
+            } else if (origConverter) {
+                return origConverter.apply($data.Container.converters[typeName], arguments);
+            } else {
+                Guard.raise(new Exception('Type Error', 'value is not koObservable', value));
+            }
+        });
+    });
 
     function ObservableFactory(originalType, observableClassNem) {
         var instanceDefinition = {
@@ -64,7 +91,7 @@
 			while (
 				div.innerHTML = '<!--[if gt IE ' + (++version) + ']><i></i><![endif]-->',
 				iElems[0]
-			);
+			){};
 			return version > 4 ? version : undefined;
 		}());
 
@@ -245,7 +272,7 @@
             //TODO rename classes to reflex variable names
             //TODO engage localValueResolver here
             //var globalVariableResolver = Container.createGlobalContextProcessor(window);
-            var constantResolver = Container.createConstantValueResolver(expression.parameters, window);
+            var constantResolver = Container.createConstantValueResolver(expression.parameters, window, this.scopeContext);
             var parameterProcessor = Container.createParameterResolverVisitor();
 
             jsCodeTree = parameterProcessor.Visit(jsCodeTree, constantResolver);
@@ -284,23 +311,26 @@
         };
 
         var esExecuteQuery = $data.EntityContext.prototype.executeQuery;
-        $data.EntityContext.prototype.executeQuery = function (expression, on_ready) {
+        $data.EntityContext.prototype.executeQuery = function (expression, on_ready, transaction) {
             var self = this;
             var observables = expression.expression.observables;
             if (observables && observables.length > 0) {
                 observables.forEach(function (obsObj) {
+                    if (!obsObj)
+                        return;
+
                     obsObj.observable.subscribe(function () {
                         if (!obsObj.skipExecute) {
                             var preparator = Container.createQueryExpressionCreator(self);
                             var newExpression = preparator.Visit(expression.expression.baseExpression);
 
-                            esExecuteQuery.call(self, Container.createQueryable(expression, newExpression), on_ready);
+                            esExecuteQuery.call(self, Container.createQueryable(expression, newExpression), on_ready, transaction);
                         }
                     });
                 });
             }
 
-            esExecuteQuery.call(self, expression, on_ready);
+            esExecuteQuery.call(self, expression, on_ready, transaction);
         };
 
         /* Observable Query End*/
@@ -384,12 +414,12 @@
         };
 
         var queryableToArray = $data.Queryable.prototype.toArray;
-        $data.Queryable.prototype.toArray = function (onResult_items) {
+        $data.Queryable.prototype.toArray = function (onResult_items, transaction) {
             if (ko.isObservable(onResult_items)) {
                 if (typeof onResult_items.push !== 'undefined') {
                     var callBack = $data.typeSystem.createCallbackSetting();
 
-                    return this.toArray(function (results) {
+                    return this.toArray(function (results, tran) {
                         onResult_items([]);
                         results.forEach(function (result, idx) {
                             if (result instanceof $data.Entity) {
@@ -398,12 +428,12 @@
                                 callBack.error('Not Implemented: Observable result has anonymous objects');
                             }
                         });
-                    });
+                    }, transaction);
                 } else {
-                    return queryableToArray.call(this, function (result) { onResult_items(result); });
+                    return queryableToArray.call(this, function (result, tran) { onResult_items(result); }, transaction);
                 }
             } else {
-                return queryableToArray.call(this, onResult_items);
+                return queryableToArray.call(this, onResult_items, transaction);
             }
         }
         /* Observable entities End*/

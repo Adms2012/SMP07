@@ -1,4 +1,4 @@
-// JayData 1.2.6
+// JayData 1.3.4
 // Dual licensed under MIT and GPL v2
 // Copyright JayStack Technologies (http://jaydata.org/licensing)
 //
@@ -6,11 +6,121 @@
 // practices to access and manipulate data from various online and offline sources.
 //
 // Credits:
-//     Hajnalka Battancs, D√°niel J√≥zsef, J√°nos Roden, L√°szl√≥ Horv√°th, P√©ter Nochta
-//     P√©ter Zentai, R√≥bert B√≥nay, Szabolcs Czinege, Viktor Borza, Viktor L√°z√°r,
-//     Zolt√°n Gyebrovszki
+//     Hajnalka Battancs, D·niel JÛzsef, J·nos Roden, L·szlÛ Horv·th, PÈter Nochta
+//     PÈter Zentai, RÛbert BÛnay, Szabolcs Czinege, Viktor Borza, Viktor L·z·r,
+//     Zolt·n Gyebrovszki, G·bor Dolla
 //
 // More info: http://jaydata.org
+$data.WebApiConverter = {
+    fromDb: {
+        '$data.Byte': $data.Container.proxyConverter,
+        '$data.SByte': $data.Container.proxyConverter,
+        '$data.Decimal': $data.Container.proxyConverter,
+        '$data.Float': $data.Container.proxyConverter,
+        '$data.Int16': $data.Container.proxyConverter,
+        '$data.Int64': $data.Container.proxyConverter,
+
+        '$data.Integer': $data.Container.proxyConverter,//function (number) { return (typeof number === 'string' && /^\d+$/.test(number)) ? parseInt(number) : number; },
+        '$data.Int32': $data.Container.proxyConverter,
+        '$data.Number': $data.Container.proxyConverter,
+        '$data.Date': function (dbData) {
+            if (dbData) {
+                if (dbData instanceof Date) {
+                    return dbData;
+                } else if (dbData.substring(0, 6) === '/Date(') {
+                    return new Date(parseInt(dbData.substr(6)));
+                } else {
+                    //ISODate without Z? Safari compatible with Z
+                    if (dbData.indexOf('Z') === -1 && !dbData.match('T.*[+-]'))
+                        dbData += 'Z';
+                    return new Date(dbData);
+                }
+            } else {
+                return dbData;
+            }
+        },
+        '$data.DateTimeOffset': function (dbData) {
+            if (dbData) {
+                if (dbData instanceof Date) {
+                    return dbData;
+                } else if (dbData.substring(0, 6) === '/Date(') {
+                    return new Date(parseInt(dbData.substr(6)));
+                } else {
+                    //ISODate without Z? Safari compatible with Z
+                    if (dbData.indexOf('Z') === -1 && !dbData.match('T.*[+-]'))
+                        dbData += 'Z';
+                    return new Date(dbData);
+                }
+            } else {
+                return dbData;
+            }
+        },
+        '$data.Time': $data.Container.proxyConverter,
+        '$data.String': $data.Container.proxyConverter,
+        '$data.Boolean': $data.Container.proxyConverter,
+        '$data.Blob': function (v) {
+            if (typeof v == 'string') {
+                try { return $data.Container.convertTo(atob(v), '$data.Blob'); }
+                catch (e) { return v; }
+            } else return v;
+        },
+        '$data.Object': function (o) { if (o === undefined) { return new $data.Object(); } else if (typeof o === 'string') { return JSON.parse(o); } return o; },
+        '$data.Array': function (o) { if (o === undefined) { return new $data.Array(); } else if (o instanceof $data.Array) { return o; } return JSON.parse(o); },
+        '$data.GeographyPoint': function (geo) {
+            if (geo && typeof geo === 'object' && Array.isArray(geo.coordinates)) {
+                return new $data.GeographyPoint(geo.coordinates);
+            }
+            return geo;
+        },
+        '$data.Guid': function (guid) { return guid ? guid.toString() : guid; }
+    },
+    toDb: {
+        '$data.Entity': $data.Container.proxyConverter,
+        '$data.Byte': $data.Container.proxyConverter,
+        '$data.SByte': $data.Container.proxyConverter,
+        '$data.Decimal': $data.Container.proxyConverter,
+        '$data.Float': $data.Container.proxyConverter,
+        '$data.Int16': $data.Container.proxyConverter,
+        '$data.Int64': $data.Container.proxyConverter,
+        '$data.ObjectID': $data.Container.proxyConverter,
+        '$data.Integer': $data.Container.proxyConverter,
+        '$data.Int32': $data.Container.proxyConverter,
+        '$data.Number': $data.Container.proxyConverter,
+        '$data.Date': function (e) { return e ? e.toISOString().replace('Z', '') : e; },
+        '$data.Time': $data.Container.proxyConverter,
+        '$data.DateTimeOffset': function (v) { return v ? v.toISOString() : v; },
+        '$data.String': $data.Container.proxyConverter,
+        '$data.Boolean': $data.Container.proxyConverter,
+        '$data.Blob': function (v) { return v ? $data.Blob.toBase64(v) : v; },
+        '$data.Object': $data.Container.proxyConverter,
+        '$data.Array': $data.Container.proxyConverter,
+        '$data.GeographyPoint': $data.Container.proxyConverter,
+        '$data.Guid': $data.Container.proxyConverter
+    },
+    escape: {
+        '$data.Entity': function (e) { return JSON.stringify(e); },
+        '$data.Integer': $data.Container.proxyConverter,
+        '$data.Int32': $data.Container.proxyConverter,
+        '$data.Number': $data.Container.proxyConverter, // double: 13.5D
+        '$data.Int16': $data.Container.proxyConverter,
+        '$data.Byte': $data.Container.proxyConverter,
+        '$data.SByte': $data.Container.proxyConverter,
+        '$data.Decimal': function (v) { return v ? v + 'm' : v; },
+        '$data.Float': function (v) { return v ? v + 'f' : v; },
+        '$data.Int64': function (v) { return v ? v + 'L' : v; },
+        '$data.Time': function (v) { return v ? "time'" + v + "'" : v; },
+        '$data.DateTimeOffset': function (date) { return date ? "datetimeoffset'" + date + "'" : date; },
+        '$data.Date': function (date) { return date ? "datetime'" + date + "'" : date; },
+        '$data.String': function (text) { return typeof text === 'string' ? "'" + text.replace(/'/g, "''") + "'" : text; },
+        '$data.ObjectID': function (text) { return typeof text === 'string' ? "'" + text.replace(/'/g, "''") + "'" : text; },
+        '$data.Boolean': function (bool) { return typeof bool === 'boolean' ? bool.toString() : bool; },
+        '$data.Blob': function (b) { return b ? "X'" + $data.Blob.toHexString($data.Container.convertTo(atob(b), $data.Blob)) + "'" : b; },
+        '$data.Object': function (o) { return JSON.stringify(o); },
+        '$data.Array': function (o) { return JSON.stringify(o); },
+        '$data.GeographyPoint': function (g) { if (g) { return $data.GeographyBase.stringifyToUrl(g); } return g; },
+        '$data.Guid': function (guid) { return guid ? ("guid'" + guid.toString() + "'") : guid; }
+    }
+};
 $C('$data.Expressions.ExpressionWalker', $data.Expressions.EntityExpressionVisitor, null, {
     constructor: function (monitorDefinition) {
         this.Visit = function (expression, context) {
@@ -96,6 +206,7 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
             password: null,
             withCredentials: false,
             enableJSONP: false
+            //disableBatch: undefined
         }, cfg);
         if (this.context && this.context._buildDbType_generateConvertToFunction && this.buildDbType_generateConvertToFunction) {
             this.context._buildDbType_generateConvertToFunction = this.buildDbType_generateConvertToFunction;
@@ -114,7 +225,7 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
             dbInstance.entityState = logicalEntity.entityState;
 
             storageModel.PhysicalType.memberDefinitions.getPublicMappedProperties().forEach(function (property) {
-                dbInstance[property.name] = logicalEntity[property.name];
+                dbInstance.initData[property.name] = logicalEntity[property.name];
             }, this);
 
             if (storageModel.Associations) {
@@ -125,28 +236,22 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
                         var refValue = logicalEntity[association.FromPropertyName];
                         if (refValue !== null && refValue !== undefined) {
                             if (refValue instanceof $data.Array) {
-                                dbInstance[association.FromPropertyName] = dbInstance[association.FromPropertyName] || [];
+                                dbInstance.initData[association.FromPropertyName] = dbInstance[association.FromPropertyName] || [];
                                 refValue.forEach(function (rv) {
                                     var contentId = convertedItems.indexOf(rv);
                                     if (contentId < 0) { Guard.raise("Dependency graph error"); }
-                                    dbInstance[association.FromPropertyName].push({ __metadata: { uri: "$" + (contentId + 1) } });
+                                    dbInstance.initData[association.FromPropertyName].push({ __metadata: { uri: "$" + (contentId + 1) } });
                                 }, this);
                             } else {
                                 if (refValue.entityState === $data.EntityState.Modified) {
                                     var sMod = context._storageModel.getStorageModel(refValue.getType())
                                     var tblName = sMod.TableName;
-                                    var pk = '(' + context.storageProvider.getEntityKeysValue({ data: refValue, entitySet: sMod.EntitySetReference }) + ')';
-                                    /*var pk = '(';
-                                    refValue.getType().memberDefinitions.getKeyProperties().forEach(function (k, index) {
-                                        if (index > 0) { pk += ','; }
-                                        pk += refValue[k.name];
-                                    }, this);
-                                    pk += ')';*/
-                                    dbInstance[association.FromPropertyName] = { __metadata: { uri: tblName + pk } };
+                                    var pk = '(' + context.storageProvider.getEntityKeysValue({ data: refValue, entitySet: context.getEntitySetFromElementType(refValue.getType()) }) + ')';
+                                    dbInstance.initData[association.FromPropertyName] = { __metadata: { uri: tblName + pk } };
                                 } else {
                                     var contentId = convertedItems.indexOf(refValue);
                                     if (contentId < 0) { Guard.raise("Dependency graph error"); }
-                                    dbInstance[association.FromPropertyName] = { __metadata: { uri: "$" + (contentId + 1) } };
+                                    dbInstance.initData[association.FromPropertyName] = { __metadata: { uri: "$" + (contentId + 1) } };
                                 }
                             }
                         }
@@ -155,12 +260,13 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
             }
             if (storageModel.ComplexTypes) {
                 storageModel.ComplexTypes.forEach(function (cmpType) {
-                    dbInstance[cmpType.FromPropertyName] = logicalEntity[cmpType.FromPropertyName];
+                    dbInstance.initData[cmpType.FromPropertyName] = logicalEntity[cmpType.FromPropertyName];
                 }, this);
             }
             return dbInstance;
         };
     },
+    buildDbType_modifyInstanceDefinition: function () { return; },
     executeQuery: function (query, callBack) {
         callBack = $data.typeSystem.createCallbackSetting(callBack);
 
@@ -243,10 +349,17 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
         }
     },
     saveInternal: function (independentBlocks, index2, callBack) {
-        if (independentBlocks.length > 1 || (independentBlocks.length == 1 && independentBlocks[0].length > 1))
-            this._saveBatch(independentBlocks, index2, callBack);
-        else
-            this._saveRest(independentBlocks, index2, callBack);
+        if ((this.providerConfiguration.disableBatch === true || (typeof $data.defaults === 'object' && $data.defaults.disableBatch === true))
+            && typeof this._saveRestMany === 'function')
+        {
+            this._saveRestMany(independentBlocks, index2, callBack);
+        } else {
+            if (independentBlocks.length > 1 || (independentBlocks.length == 1 && independentBlocks[0].length > 1)) {
+                this._saveBatch(independentBlocks, index2, callBack);
+            } else {
+                this._saveRest(independentBlocks, index2, callBack);
+            }
+        }
     },
     _saveRest: function (independentBlocks, index2, callBack) {
         var batchRequests = [];
@@ -302,7 +415,7 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
                     var item = convertedItem[0];
                     item.getType().memberDefinitions.getPublicMappedProperties().forEach(function (memDef) {
                         var propType = Container.resolveType(memDef.type);
-                        if (memDef.computed || memDef.key || (!propType.isAssignableto && !memDef.inverseProperty)) {
+                        if (memDef.computed || memDef.key || (!propType.isAssignableTo && !memDef.inverseProperty)) {
                             //if (memDef.concurrencyMode === $data.ConcurrencyMode.Fixed) {
                             //    item[memDef.name] = response.headers.ETag || response.headers.Etag;
                             //} else {
@@ -336,7 +449,7 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
                 //        //}, this);
                 //        //item.getType().memberDefinitions.getPublicMappedProperties().forEach(function (memDef) {
                 //        //    var propType = Container.resolveType(memDef.type);
-                //        //    if (memDef.computed || memDef.key || (!propType.isAssignableto && !memDef.inverseProperty)) {
+                //        //    if (memDef.computed || memDef.key || (!propType.isAssignableTo && !memDef.inverseProperty)) {
                 //        //        if (memDef.concurrencyMode === $data.ConcurrencyMode.Fixed) {
                 //        //            item[memDef.name] = response.headers.ETag || response.headers.Etag;
                 //        //        } else {
@@ -495,7 +608,8 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
         var sqlText = this._compile(queryable);
         return queryable;
     },
-    supportedDataTypes: { value: [$data.Integer, $data.String, $data.Number, $data.Blob, $data.Boolean, $data.Date, $data.Object, $data.Geography, $data.Guid], writable: false },
+    supportedDataTypes: { value: [$data.Integer, $data.String, $data.Number, $data.Blob, $data.Boolean, $data.Date, $data.Object, $data.GeographyPoint, $data.Guid,
+        $data.Byte, $data.SByte, $data.Decimal, $data.Float, $data.Int16, $data.Int32, $data.Int64, $data.Time, $data.DateTimeOffset], writable: false },
 
     supportedBinaryOperators: {
         value: {
@@ -679,45 +793,7 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
         enumerable: true,
         writable: true
     },
-    fieldConverter: {
-        value: {
-            fromDb: {
-                '$data.Integer': function (number) { return (typeof number === 'string' && /^\d+$/.test(number)) ? parseInt(number) : number; },
-                '$data.Number': function (number) { return number; },
-                '$data.Date': function (dbData) { return dbData ? new Date(dbData) : undefined; },
-                '$data.String': function (text) { return text; },
-                '$data.Boolean': function (bool) { return bool; },
-                '$data.Blob': function (blob) { return blob; },
-                '$data.Object': function (o) { if (o === undefined) { return new $data.Object(); } else if (typeof o === 'string') { return JSON.parse(o); } return o; },
-                '$data.Array': function (o) { if (o === undefined) { return new $data.Array(); } else if (o instanceof $data.Array) { return o; } return JSON.parse(o); },
-                '$data.Geography': function (geo) {
-                    if (geo && typeof geo === 'object' && Array.isArray(geo.coordinates)) {
-                        return new $data.Geography(geo.coordinates[0], geo.coordinates[1]);
-                    }
-                    return geo;
-                },
-                '$data.Guid': function (guid) { return guid ? new $data.Guid(guid) : guid; }
-            },
-            toDb: {
-                '$data.Entity': function (e) { return "'" + JSON.stringify(e.initData) + "'" },
-                '$data.Integer': function (number) { return number; },
-                '$data.Number': function (number) { return number % 1 == 0 ? number : number + 'm'; },
-                '$data.Date': function (date) { return date ? "datetime'" + date.toISOString() + "'" : null; },
-                '$data.String': function (text) { return "'" + text.replace(/'/g, "''") + "'"; },
-                '$data.Boolean': function (bool) { return bool ? 'true' : 'false'; },
-                '$data.Blob': function (blob) { return blob; },
-                '$data.Object': function (o) { return JSON.stringify(o); },
-                '$data.Array': function (o) { return JSON.stringify(o); },
-                '$data.Geography': function (geo) {
-                    /*POINT(-127.89734578345 45.234534534)*/
-                    if (geo instanceof $data.Geography)
-                        return 'POINT(' + geo.longitude + ' ' + geo.latitude + ')';
-                    return geo;
-                },
-                '$data.Guid': function (guid) { return guid ? ("guid'" + guid.value + "'") : guid; }
-            }
-        }
-    },
+    fieldConverter: { value: $data.WebApiConverter },
     getEntityKeysValue: function (entity) {
         var result = [];
         var keyValue = undefined;
@@ -727,7 +803,7 @@ $C('$data.storageProviders.webApi.webApiProvider', $data.StorageProviderBase, nu
             var field = memDefs[i];
             if (field.key) {
                 keyValue = entity.data[field.name];
-                switch (Container.getName(field.dataType)) {
+                switch (Container.getName(field.originalType)) {
                     case "$data.Guid":
                     case "Edm.Guid":
                         keyValue = ("guid'" + (keyValue ? keyValue.value : keyValue) + "'");
@@ -865,13 +941,13 @@ $C('$data.storageProviders.webApi.webApiCompiler', $data.Expressions.EntityExpre
     VisitOrderExpression: function (expression, context) {
         this.Visit(expression.source, context);
 
-        var orderCompiler = Container.createoDataOrderCompiler(this.provider);
+        var orderCompiler = Container.createwebApiOrderCompiler(this.provider);
         orderCompiler.compile(expression, context);
     },
     VisitPagingExpression: function (expression, context) {
         this.Visit(expression.source, context);
 
-        var pagingCompiler = Container.createoDataPagingCompiler();
+        var pagingCompiler = Container.createwebApiPagingCompiler();
         pagingCompiler.compile(expression, context);
     },
     VisitIncludeExpression: function (expression, context) {
@@ -902,7 +978,7 @@ $C('$data.storageProviders.webApi.webApiCompiler', $data.Expressions.EntityExpre
     VisitProjectionExpression: function (expression, context) {
         this.Visit(expression.source, context);
 
-        var projectionCompiler = Container.createoDataProjectionCompiler(this.context);
+        var projectionCompiler = Container.createwebApiProjectionCompiler(this.context);
         projectionCompiler.compile(expression, context);
     },
     VisitFilterExpression: function (expression, context) {
@@ -910,7 +986,7 @@ $C('$data.storageProviders.webApi.webApiCompiler', $data.Expressions.EntityExpre
 
         this.Visit(expression.source, context);
 
-        var filterCompiler = Container.createoDataWhereCompiler(this.provider);
+        var filterCompiler = Container.createwebApiWhereCompiler(this.provider);
         context.data = "";
         filterCompiler.compile(expression.selector, context);
         context["$filter"] = context.data;
@@ -944,13 +1020,23 @@ $C('$data.storageProviders.webApi.webApiCompiler', $data.Expressions.EntityExpre
     VisitConstantExpression: function (expression, context) {
         if (context['$urlParams']) { context['$urlParams'] += '&'; } else { context['$urlParams'] = ''; }
 
-        var value;
+        var typeName = Container.resolveName(expression.type);
+        if (expression.value instanceof $data.Entity)
+            typeName = $data.Entity.fullName;
+
+        var converter = this.provider.fieldConverter.toDb[typeName];
+        var value = converter ? converter(expression.value) : expression.value;
+
+        converter = this.provider.fieldConverter.escape[typeName];
+        value = converter ? converter(value) : value;
+
+        /*var value;
         if (expression.value instanceof $data.Entity) {
             value = this.provider.fieldConverter.toDb['$data.Entity'](expression.value);
         } else {
-            var valueType = Container.getTypeName(expression.value);
-            value = this.provider.fieldConverter.toDb[Container.resolveName(Container.resolveType(valueType))](expression.value);
-        }
+            //var valueType = Container.getTypeName(expression.value);
+            value = this.provider.fieldConverter.toDb[Container.resolveName(Container.resolveType(expression.type))](expression.value);
+        }*/
         context['$urlParams'] += expression.name + '=' + value;
     },
     //    VisitConstantExpression: function (expression, context) {
@@ -1005,7 +1091,7 @@ $C('$data.storageProviders.webApi.webApiWhereCompiler', $data.Expressions.Entity
             var eqResolution = { mapTo: "eq", dataType: "boolean", name: "equal" };
 
             paramValue.forEach(function (item) {
-                var idValue = Container.createConstantExpression(item);
+                var idValue = item;
                 var idCheck = Container.createSimpleBinaryExpression(expression.left, idValue,
                     $data.Expressions.ExpressionType.Equal, "==", "boolean", eqResolution);
                 if (result) {
@@ -1014,6 +1100,7 @@ $C('$data.storageProviders.webApi.webApiWhereCompiler', $data.Expressions.Entity
                 } else {
                     result = idCheck;
                 };
+
             });
             var temp = context.data;
             context.data = '';
@@ -1047,7 +1134,15 @@ $C('$data.storageProviders.webApi.webApiWhereCompiler', $data.Expressions.Entity
     },
 
     VisitQueryParameterExpression: function (expression, context) {
-        context.data += this.provider.fieldConverter.toDb[expression.type](expression.value);
+        //context.data += this.provider.fieldConverter.toDb[expression.type](expression.value);
+
+        var typeName = Container.resolveName(expression.type);
+
+        var converter = this.provider.fieldConverter.toDb[typeName];
+        var value = converter ? converter(expression.value) : expression.value;
+
+        converter = this.provider.fieldConverter.escape[typeName];
+        context.data += converter ? converter(value) : value;
     },
 
     VisitEntityFieldOperationExpression: function (expression, context) {
@@ -1079,8 +1174,16 @@ $C('$data.storageProviders.webApi.webApiWhereCompiler', $data.Expressions.Entity
     },
 
     VisitConstantExpression: function (expression, context) {
-        var valueType = Container.getTypeName(expression.value);
-        context.data += this.provider.fieldConverter.toDb[Container.resolveName(Container.resolveType(valueType))](expression.value);
+        //var valueType = Container.getTypeName(expression.value);
+        //context.data += this.provider.fieldConverter.toDb[Container.resolveName(Container.resolveType(expression.type))](expression.value);
+
+        var typeName = Container.resolveName(expression.type);
+
+        var converter = this.provider.fieldConverter.toDb[typeName];
+        var value = converter ? converter(expression.value) : expression.value;
+
+        converter = this.provider.fieldConverter.escape[typeName];
+        context.data += converter ? converter(value) : value;
     },
 
     VisitEntityExpression: function (expression, context) {

@@ -18,6 +18,17 @@ define(["jQuery", "kendo", "config", "utils"], function ($, kendo, config, utils
         $.extend(this, options || {});
     };
     
+/**    
+    var Task = $data.define("Task", 
+                        { 
+                        Todo: String, 
+                        Completed: Boolean
+                        }
+                    );
+    var datasourceTask = Task.asKendoDataSource();
+    $('#gridTask').kendoGrid({ dataSource: datasourceTask });
+**/
+    
     var DataSourceServiceItems = function (url, sortField, options) {
         this.transport = {
             read: url,

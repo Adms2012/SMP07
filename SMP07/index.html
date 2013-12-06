@@ -4,7 +4,9 @@
 		<title></title>
 		<meta charset="utf-8" />
 		<script src="cordova.js"></script>
-
+        <!--script src="jaydata/jaydata.min.js"></script>
+        <script src="jaydata/jaydatamodules/kendo.js"></script-->
+        
 		<link href="kendo/styles/kendo.mobile.all.min.css" rel="stylesheet" />
 		<link href="kendo/styles/kendo.indexedlistview.css" rel="stylesheet" />
 		<link href="styles/main.css" rel="stylesheet" />
@@ -12,6 +14,12 @@
 	<body id="body">
 
 		<!-- Home Views -->
+        
+        <div id="gridTask"></div>
+        
+    	<div data-role="view" id="genres-view" data-layout="home-layout" data-title="Albums" data-model="app.genresView.viewModel" data-show="app.genresView.onShow">
+			<ul data-role="listview" data-bind="source: genres" data-template="genre-list-template" data-style="inset"></ul>
+		</div>
 
 		<div data-role="view" id="hairServices-view" data-layout="home-layout" data-title="Hair" data-model="app.hairServicesView.viewModel" data-show="app.hairServicesView.onShow">
 			<ul data-role="listview" data-bind="source: hairServices" data-template="hairServices-list-template" data-style="inset"></ul>
@@ -60,7 +68,8 @@
 					<li data-target="#hairServices-view">Hair</li>
 					<!--li data-target="#genres-view">Genres</li-->
 					<!--li data-target="#artists-view">Artists</li-->
-                    <li data-target="#nailServices-view">Nails</li>
+                    <!--li data-target="#nailServices-view">Nails</li-->
+                    <!--li data-target="#gridTask">Tasks</li-->
 				</ul>
 			</header>
 

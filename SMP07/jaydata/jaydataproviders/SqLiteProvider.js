@@ -1,4 +1,4 @@
-// JayData 1.2.6
+// JayData 1.3.4
 // Dual licensed under MIT and GPL v2
 // Copyright JayStack Technologies (http://jaydata.org/licensing)
 //
@@ -6,9 +6,9 @@
 // practices to access and manipulate data from various online and offline sources.
 //
 // Credits:
-//     Hajnalka Battancs, DÃ¡niel JÃ³zsef, JÃ¡nos Roden, LÃ¡szlÃ³ HorvÃ¡th, PÃ©ter Nochta
-//     PÃ©ter Zentai, RÃ³bert BÃ³nay, Szabolcs Czinege, Viktor Borza, Viktor LÃ¡zÃ¡r,
-//     ZoltÃ¡n Gyebrovszki
+//     Hajnalka Battancs, Dániel József, János Roden, László Horváth, Péter Nochta
+//     Péter Zentai, Róbert Bónay, Szabolcs Czinege, Viktor Borza, Viktor Lázár,
+//     Zoltán Gyebrovszki, Gábor Dolla
 //
 // More info: http://jaydata.org
 $data.Class.define('$data.dbClient.DbCommand', null, null,
@@ -41,20 +41,21 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
         this.connection = con;
         this.parameters = params;
     },
-    executeNonQuery: function (callback) {
+    executeNonQuery: function (callback, tran, isWrite) {
         callback = $data.typeSystem.createCallbackSetting(callback);
-        this.exec(this.query, this.parameters, callback.success, callback.error);
+        this.exec(this.query, this.parameters, callback.success, callback.error, tran, isWrite);
     },
-    executeQuery: function (callback) {
+    executeQuery: function (callback, tran, isWrite) {
         callback = $data.typeSystem.createCallbackSetting(callback);
-        this.exec(this.query, this.parameters, callback.success, callback.error);
+        this.exec(this.query, this.parameters, callback.success, callback.error, tran, isWrite);
     },
-    exec: function (query, parameters, callback, errorhandler) {
-		// suspicious code
+    exec: function (query, parameters, callback, errorhandler, transaction, isWrite) {
+        // suspicious code
         /*if (console) {
             //console.log(query);
         }*/
         this.connection.open({
+            error: errorhandler,
             success: function (tran) {
                 var single = false;
                 if (!(query instanceof Array)) {
@@ -62,13 +63,13 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
                     query = [query];
                     parameters = [parameters];
                 }
-                
+
                 var results = [];
                 var remainingCommands = 0;
 
                 function decClb() {
                     if (--remainingCommands == 0) {
-                        callback(single ? results[0] : results);
+                        callback(single ? results[0] : results, transaction);
                     }
                 }
 
@@ -82,7 +83,8 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
                                 var r = { rows: [] };
                                 try {
                                     r.insertId = result.insertId;
-                                } catch (e) {
+                                } catch (e) {}
+                                if (typeof r.insertId !== 'number') {
                                     // If insertId is present, no rows are returned
                                     r.rowsAffected = result.rowsAffected;
                                     var maxItem = result.rows.length;
@@ -91,11 +93,16 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
                                     }
                                 }
                                 results[i] = r;
-                                decClb();
+                                decClb(trx);
                             },
                             function (trx, err) {
+                                var _q = q;
+                                var _i = i;
+
                                 if (errorhandler)
                                     errorhandler(err);
+
+                                return true;
                             }
                         );
                     } else {
@@ -104,7 +111,7 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
                     }
                 });
             }
-        });
+        }, transaction, isWrite);
     }
 }, null);$data.Class.define('$data.dbClient.openDatabaseClient.OpenDbConnection', $data.dbClient.DbConnection, null,
 {
@@ -114,14 +121,34 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
     isOpen: function () {
         return this.database !== null && this.database !== undefined && this.transaction !== null && this.transaction !== undefined;
     },
-    open: function (callBack) {
-		if (this.database){
-			this.database.transaction(function (tran) { callBack.success(tran); });
+    open: function (callBack, tran, isWrite) {
+        if (isWrite === undefined)
+            isWrite = true;
+
+        callBack.oncomplete = callBack.oncomplete || function () { };
+        if (tran) {
+            callBack.success(tran.transaction);
+        } else if (this.database) {
+            if (isWrite) {
+                this.database.transaction(function (tran) { callBack.success(tran); }, callBack.error, callBack.oncomplete);
+            } else {
+                this.database.readTransaction(function (tran) { callBack.success(tran); }, callBack.error, callBack.oncomplete);
+            }
         } else {
             var p = this.connectionParams;
             var con = this;
-			this.database = openDatabase(p.fileName, p.version, p.displayName, p.maxSize);
-			this.database.transaction(function (tran) { callBack.success(tran); });
+            this.database = openDatabase(p.fileName, p.version, p.displayName, p.maxSize);
+            if (!this.database.readTransaction) {
+                this.database.readTransaction = function () {
+                    con.database.transaction.apply(con.database, arguments);
+                }
+            }
+
+            if (isWrite) {
+                this.database.transaction(function (tran) { callBack.success(tran); }, callBack.error, callBack.oncomplete);
+            } else {
+                this.database.readTransaction(function (tran) { callBack.success(tran); }, callBack.error, callBack.oncomplete);
+            }
         }
     },
     close: function () {
@@ -132,7 +159,8 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
         var cmd = new $data.dbClient.openDatabaseClient.OpenDbCommand(this, queryStr, params);
         return cmd;
     }
-}, null);$data.Class.define('$data.dbClient.jayStorageClient.JayStorageCommand', $data.dbClient.DbCommand, null,
+}, null);
+$data.Class.define('$data.dbClient.jayStorageClient.JayStorageCommand', $data.dbClient.DbCommand, null,
 {
     constructor: function (con, queryStr, params) {
         this.query = queryStr;
@@ -309,22 +337,129 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
         var cmd = new $data.dbClient.sqLiteNJClient.SqLiteNjCommand(this, queryStr, params);
         return cmd;
     }
-}, null);$data.Class.define('$data.storageProviders.sqLite.SqLiteStorageProvider', $data.StorageProviderBase, null,
+}, null);$data.SqLiteConverter = {
+    fromDb: {
+        '$data.Byte': $data.Container.proxyConverter,
+        '$data.SByte': $data.Container.proxyConverter,
+        '$data.Decimal': $data.Container.proxyConverter,
+        '$data.Float': $data.Container.proxyConverter,
+        '$data.Int16': $data.Container.proxyConverter,
+        '$data.Int64': $data.Container.proxyConverter,
+        "$data.Integer": $data.Container.proxyConverter,
+        "$data.Int32": $data.Container.proxyConverter,
+        "$data.Number": $data.Container.proxyConverter,
+        "$data.Date": function (dbData) { return dbData != null ? new Date(dbData) : dbData; },
+        "$data.DateTimeOffset": function (dbData) { return dbData != null ? new Date(dbData) : dbData; },
+        "$data.Time": $data.Container.proxyConverter,
+        "$data.String": $data.Container.proxyConverter,
+        "$data.Boolean": function (b) { return b === 1 ? true : false; },
+        "$data.Blob": function(b){ return b ? $data.Container.convertTo(atob(b), $data.Blob) : b; },
+        "$data.Array": function () {
+            if (arguments.length == 0) return [];
+            return arguments[0] ? JSON.parse(arguments[0]) : undefined;
+        },
+        "$data.Guid": function (g) { return g ? $data.parseGuid(g).toString() : g; },
+        '$data.GeographyPoint': function (g) { if (g) { return new $data.GeographyPoint(JSON.parse(g)); } return g; },
+        '$data.GeographyLineString': function (g) { if (g) { return new $data.GeographyLineString(JSON.parse(g)); } return g; },
+        '$data.GeographyPolygon': function (g) { if (g) { return new $data.GeographyPolygon(JSON.parse(g)); } return g; },
+        '$data.GeographyMultiPoint': function (g) { if (g) { return new $data.GeographyMultiPoint(JSON.parse(g)); } return g; },
+        '$data.GeographyMultiLineString': function (g) { if (g) { return new $data.GeographyMultiLineString(JSON.parse(g)); } return g; },
+        '$data.GeographyMultiPolygon': function (g) { if (g) { return new $data.GeographyMultiPolygon(JSON.parse(g)); } return g; },
+        '$data.GeographyCollection': function (g) { if (g) { return new $data.GeographyCollection(JSON.parse(g)); } return g; },
+        '$data.GeometryPoint': function (g) { if (g) { return new $data.GeometryPoint(JSON.parse(g)); } return g; },
+        '$data.GeometryLineString': function (g) { if (g) { return new $data.GeometryLineString(JSON.parse(g)); } return g; },
+        '$data.GeometryPolygon': function (g) { if (g) { return new $data.GeometryPolygon(JSON.parse(g)); } return g; },
+        '$data.GeometryMultiPoint': function (g) { if (g) { return new $data.GeometryMultiPoint(JSON.parse(g)); } return g; },
+        '$data.GeometryMultiLineString': function (g) { if (g) { return new $data.GeometryMultiLineString(JSON.parse(g)); } return g; },
+        '$data.GeometryMultiPolygon': function (g) { if (g) { return new $data.GeometryMultiPolygon(JSON.parse(g)); } return g; },
+        '$data.GeometryCollection': function (g) { if (g) { return new $data.GeometryCollection(JSON.parse(g)); } return g; }
+    },
+    toDb: {
+        '$data.Byte': $data.Container.proxyConverter,
+        '$data.SByte': $data.Container.proxyConverter,
+        '$data.Decimal': $data.Container.proxyConverter,
+        '$data.Float': $data.Container.proxyConverter,
+        '$data.Int16': $data.Container.proxyConverter,
+        '$data.Int64': $data.Container.proxyConverter,
+        "$data.Integer": $data.Container.proxyConverter,
+        "$data.Int32": $data.Container.proxyConverter,
+        "$data.Number": $data.Container.proxyConverter,
+        "$data.Date": function (date) { return date ? date.valueOf() : null; },
+        "$data.DateTimeOffset": function (date) { return date ? date.valueOf() : null; },
+        "$data.Time": $data.Container.proxyConverter,
+        "$data.String": $data.Container.proxyConverter,
+        "$data.Boolean": function (b) { return b ? 1 : 0; },
+        "$data.Blob": function(b){ return b ? $data.Blob.toBase64(b) : b; },
+        "$data.Array": function (arr) { return arr ? JSON.stringify(arr) : arr; },
+        "$data.Guid": function (g) { return g ? g.toString() : g; },
+        "$data.Object": function (value) { if (value === null) { return null; } throw 'Not supported exception'; },
+        '$data.GeographyPoint': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeographyLineString': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeographyPolygon': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeographyMultiPoint': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeographyMultiLineString': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeographyMultiPolygon': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeographyCollection': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeometryPoint': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeometryLineString': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeometryPolygon': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeometryMultiPoint': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeometryMultiLineString': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeometryMultiPolygon': function (g) { if (g) { return JSON.stringify(g); } return g; },
+        '$data.GeometryCollection': function (g) { if (g) { return JSON.stringify(g); } return g; }
+    }
+};
+
+$data.SqLiteFieldMapping = {
+    '$data.Byte': "INTEGER",
+    '$data.SByte': "INTEGER",
+    '$data.Decimal': "TEXT",
+    '$data.Float': "REAL",
+    '$data.Int16': "INTEGER",
+    '$data.Int64': "TEXT",
+    "$data.Integer": "INTEGER",
+    "$data.Int32": "INTEGER",
+    "$data.Number": "REAL",
+    "$data.Date": "REAL",
+    "$data.Time": "TEXT",
+    "$data.DateTimeOffset": "REAL",
+    "$data.String": "TEXT",
+    "$data.Boolean": "INTEGER",
+    "$data.Blob": "BLOB",
+    "$data.Array": "TEXT",
+    "$data.Guid": "TEXT",
+    "$data.Object": "TEXT",
+    '$data.GeographyPoint': "TEXT",
+    '$data.GeographyLineString': "TEXT",
+    '$data.GeographyPolygon': "TEXT",
+    '$data.GeographyMultiPoint': "TEXT",
+    '$data.GeographyMultiLineString': "TEXT",
+    '$data.GeographyMultiPolygon': "TEXT",
+    '$data.GeographyCollection': "TEXT",
+    '$data.GeometryPoint': "TEXT",
+    '$data.GeometryLineString': "TEXT",
+    '$data.GeometryPolygon': "TEXT",
+    '$data.GeometryMultiPoint': "TEXT",
+    '$data.GeometryMultiLineString': "TEXT",
+    '$data.GeometryMultiPolygon': "TEXT",
+    '$data.GeometryCollection': "TEXT"
+};
+$data.Class.define('$data.storageProviders.sqLite.SqLiteStorageProvider', $data.StorageProviderBase, null,
 {
     constructor: function (cfg, context) {
         this.SqlCommands = [];
         this.context = context;
         this.providerConfiguration = $data.typeSystem.extend({
-            databaseName: "JayDataDemo",
+            databaseName: $data.defaults.defaultDatabaseName,
             version: "",
-            displayName: "JayData demo db",
+            displayName: "JayData default db",
             maxSize: 1024 * 1024,
             dbCreation: $data.storageProviders.DbCreationType.DropTableIfChanged
         }, cfg);
         
         this.providerName = '';
-        for (var i in $data.RegisteredStorageProviders){
-            if ($data.RegisteredStorageProviders[i] === this.getType()){
+        for (var i in $data.RegisteredStorageProviders) {
+            if ($data.RegisteredStorageProviders[i] === this.getType()) {
                 this.providerName = i;
             }
         }
@@ -360,30 +495,15 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
 
         return connection;
     },
-    supportedDataTypes: { value: [$data.Integer, $data.String, $data.Number, $data.Blob, $data.Boolean, $data.Date, $data.Guid], writable: false },
-    fieldConverter: {
-        value: {
-            fromDb: {
-                "$data.Integer": function (number) { return number; },
-                "$data.Number": function (number) { return number; },
-                "$data.Date": function (dbData) { return dbData != null ? new Date(dbData) : dbData; },
-                "$data.String": function (text) { return text; },
-                "$data.Boolean": function (b) { return b === 1 ? true : false; },
-                "$data.Blob": function (blob) { return blob; },
-                "$data.Guid": function (g) { return g ? $data.parseGuid(g) : g; }
-            },
-            toDb: {
-                "$data.Integer": function (number) { return number; },
-                "$data.Number": function (number) { return number; },
-                "$data.Date": function (date) { return date ? date.valueOf() : null; },
-                "$data.String": function (text) { return text; },
-                "$data.Boolean": function (b) { return b ? 1 : 0; },
-                "$data.Blob": function (blob) { return blob; },
-                "$data.Guid": function (g) { return g ? g.value : g; },
-                "$data.Object": function(value){if(value === null){return null;} throw 'Not supported exception';}
-            }
-        }
+    //$data.Array, 
+    supportedDataTypes: {
+        value: [$data.Array, $data.Integer, $data.String, $data.Number, $data.Blob, $data.Boolean, $data.Date, $data.Guid, $data.GeographyPoint,
+            $data.GeographyLineString, $data.GeographyPolygon, $data.GeographyMultiPoint, $data.GeographyMultiLineString, $data.GeographyMultiPolygon, $data.GeographyCollection,
+            $data.GeometryPoint, $data.GeometryLineString, $data.GeometryPolygon, $data.GeometryMultiPoint, $data.GeometryMultiLineString, $data.GeometryMultiPolygon, $data.GeometryCollection,
+            $data.Byte, $data.SByte, $data.Decimal, $data.Float, $data.Int16, $data.Int32, $data.Int64, $data.Time, $data.DateTimeOffset],
+        writable: false
     },
+    fieldConverter: { value: $data.SqLiteConverter },
 
     supportedFieldOperations: {
         value: {
@@ -496,116 +616,15 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
         writable: true
     },
 
-    buildDbType_modifyInstanceDefinition: function (instanceDefinition, storageModel) {
-        var buildDbType_copyPropertyDefinition = function (propertyDefinition, refProp) {
-            var cPropertyDef;
-            if (refProp) {
-                cPropertyDef = JSON.parse(JSON.stringify(instanceDefinition[refProp]));
-                cPropertyDef.kind = propertyDefinition.kind;
-                cPropertyDef.name = propertyDefinition.name;
-                cPropertyDef.notMapped = false;
-            } else {
-                cPropertyDef = JSON.parse(JSON.stringify(propertyDefinition));
-            }
-
-            cPropertyDef.dataType = Container.resolveType(propertyDefinition.dataType);
-            cPropertyDef.type = cPropertyDef.dataType;
-            cPropertyDef.key = false;
-            cPropertyDef.computed = false;
-            return cPropertyDef;
-        };
-        var buildDbType_createConstrain = function (foreignType, dataType, propertyName, prefix) {
-            var constrain = new Object();
-            constrain[foreignType.name] = propertyName;
-            constrain[dataType.name] = prefix + '__' + propertyName;
-            return constrain;
-        };
-
-        if (storageModel.Associations) {
-            storageModel.Associations.forEach(function (association) {
-                var addToEntityDef = false;
-                var foreignType = association.FromType;
-                var dataType = association.ToType;
-                var foreignPropName = association.ToPropertyName;
-
-                association.ReferentialConstraint = association.ReferentialConstraint || [];
-
-                if ((association.FromMultiplicity == "*" && association.ToMultiplicity == "0..1") || (association.FromMultiplicity == "0..1" && association.ToMultiplicity == "1")) {
-                    foreignType = association.ToType;
-                    dataType = association.FromType;
-                    foreignPropName = association.FromPropertyName;
-                    addToEntityDef = true;
-                }
-
-                foreignType.memberDefinitions.getPublicMappedProperties().filter(function (d) { return d.key }).forEach(function (d) {
-                    if (addToEntityDef) {
-                        instanceDefinition[foreignPropName + '__' + d.name] = buildDbType_copyPropertyDefinition(d, foreignPropName);
-                    }
-                    association.ReferentialConstraint.push(buildDbType_createConstrain(foreignType, dataType, d.name, foreignPropName));
-                }, this);
-            }, this);
-        }
-        //Copy complex type properties
-        if (storageModel.ComplexTypes) {
-            storageModel.ComplexTypes.forEach(function (complexType) {
-                complexType.ReferentialConstraint = complexType.ReferentialConstraint || [];
-
-                complexType.ToType.memberDefinitions.getPublicMappedProperties().forEach(function (d) {
-                    instanceDefinition[complexType.FromPropertyName + '__' + d.name] = buildDbType_copyPropertyDefinition(d);
-                    complexType.ReferentialConstraint.push(buildDbType_createConstrain(complexType.ToType, complexType.FromType, d.name, complexType.FromPropertyName));
-                }, this);
-            }, this);
-        }
+    supportedAutoincrementKeys: {
+        value:{
+            '$data.Integer': true,
+            '$data.Int32': true,
+            '$data.Guid': function () { return $data.createGuid(); }
+        }       
     },
-    buildDbType_generateConvertToFunction: function (storageModel) {
-        return function (logicalEntity) {
-            var dbInstance = new storageModel.PhysicalType();
-            dbInstance.entityState = logicalEntity.entityState;
 
-            //logicalEntity.changedProperties.forEach(function(memberDef){
-            //}, this);
-            storageModel.PhysicalType.memberDefinitions.getPublicMappedProperties().forEach(function (property) {
-                dbInstance[property.name] = logicalEntity[property.name];
-            }, this);
-
-            if (storageModel.Associations) {
-                storageModel.Associations.forEach(function (association) {
-                    if ((association.FromMultiplicity == "*" && association.ToMultiplicity == "0..1") || (association.FromMultiplicity == "0..1" && association.ToMultiplicity == "1")) {
-                        var complexInstance = logicalEntity[association.FromPropertyName];
-                        if (complexInstance !== undefined) {
-                            association.ReferentialConstraint.forEach(function (constrain) {
-                                if (complexInstance !== null) {
-                                    dbInstance[constrain[association.From]] = complexInstance[constrain[association.To]];
-                                } else {
-                                    dbInstance[constrain[association.From]] = null;
-                                }
-                            }, this);
-                        }
-                    }
-                }, this);
-            }
-            if (storageModel.ComplexTypes) {
-                storageModel.ComplexTypes.forEach(function (cmpType) {
-                    var complexInstance = logicalEntity[cmpType.FromPropertyName];
-                    if (complexInstance !== undefined) {
-                        cmpType.ReferentialConstraint.forEach(function (constrain) {
-                            if (complexInstance !== null) {
-                                dbInstance[constrain[cmpType.From]] = complexInstance[constrain[cmpType.To]];
-                            } else {
-                                dbInstance[constrain[cmpType.From]] = null;
-                            }
-                        }, this);
-                    }
-                }, this);
-            }
-            return dbInstance;
-        };
-    },
     initializeStore: function (callBack) {
-        // callBack.success(this.context); return;
-
-
-
         callBack = $data.typeSystem.createCallbackSetting(callBack);
         this.context._storageModel.forEach(function (item, index) {
             this.SqlCommands.push(this.createSqlFromStorageModel(item) + " ");
@@ -736,13 +755,18 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
                 item.physicalData = dbType.convertTo(item.data);
                 return item;
             }, this);
-            provider.saveIndependentItems(convertedItems, sqlConnection, {
-                success: function () {
-                    provider.postProcessItems(convertedItems);
-                    saveNextIndependentBlock();
-                },
-                error: callback.error
-            });
+            try {
+                provider.saveIndependentItems(convertedItems, sqlConnection, {
+                    success: function () {
+                        provider.postProcessItems(convertedItems);
+                        saveNextIndependentBlock();
+                    },
+                    error: callback.error
+                });
+            } catch (e) {
+                callback.error(e);
+            }
+            
         }
         saveNextIndependentBlock();
     },
@@ -915,6 +939,17 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
         var fieldValue = "";
         var fieldParam = [];
         item.physicalData.constructor.memberDefinitions.getPublicMappedProperties().forEach(function (fieldDef, i) {
+            if (fieldDef.key && !fieldDef.computed && Object.isNullOrUndefined(item.physicalData[fieldDef.name])) {
+                Guard.raise(new Exception('Key is not set', 'Value exception', item));
+                return;
+            }
+            if (fieldDef.key && fieldDef.computed && Object.isNullOrUndefined(item.physicalData[fieldDef.name])) {
+                var typeName = Container.resolveName(fieldDef.type);
+                if (typeof this.supportedAutoincrementKeys[typeName] === 'function') {
+                    item.physicalData[fieldDef.name] = this.supportedAutoincrementKeys[typeName]();
+                }
+            }
+
             if (fieldList.length > 0 && fieldList[fieldList.length - 1] != ",") { fieldList += ","; fieldValue += ","; }
             var fieldName = fieldDef.name;
             if (/*item.physicalData[fieldName] !== null && */item.physicalData[fieldName] !== undefined) {
@@ -931,10 +966,13 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
             }
 
         }, this);
-        if (fieldParam.length < 1) { Guard.raise(new Exception('None of the fields contain values in the entity to be saved.')); }
-        if (fieldList[fieldList.length - 1] == ",") { fieldList = fieldList.slice(0, fieldList.length - 1); }
-        if (fieldValue[fieldValue.length - 1] == ",") { fieldValue = fieldValue.slice(0, fieldValue.length - 1); }
-        insertSqlString += fieldList + ") VALUES(" + fieldValue + ");";
+        if (fieldParam.length < 1) {
+            insertSqlString = "INSERT INTO [" + item.entitySet.tableName + "] Default values";
+        } else {
+            if (fieldList[fieldList.length - 1] == ",") { fieldList = fieldList.slice(0, fieldList.length - 1); }
+            if (fieldValue[fieldValue.length - 1] == ",") { fieldValue = fieldValue.slice(0, fieldValue.length - 1); }
+            insertSqlString += fieldList + ") VALUES(" + fieldValue + ");";
+        }
         return { query: insertSqlString, param: fieldParam };
     },
     save_reloadSavedEntity: function (rowid, tableName) {
@@ -965,6 +1003,13 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
         if (autoincrementFieldNumber > 1 && keyFieldNumber > 1) {
             Guard.raise(new Exception('Do not use multiple computed field!'));
         }
+        
+        memberDef.PhysicalType.memberDefinitions.getKeyProperties().forEach(function (item, index) {
+            var typeName = Container.resolveName(item.type);
+            if (item.computed && !(typeName in this.supportedAutoincrementKeys)) {
+                console.log("WARRNING! '" + typeName + "' not supported as computed Key!");
+            }
+        }, this);
 
         var sql = "CREATE TABLE IF NOT EXISTS [" + memberDef.TableName + "] (";
         var pkFragment = ',PRIMARY KEY (';
@@ -1006,12 +1051,13 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
         this.entitySet = storageModelObject;
         this.build = function () {
 
-            switch (Container.resolveType(this.fld.dataType)) {
-                case $data.String: case $data.Guid: case "text": case "string": this.buildFieldNameAndType("TEXT"); break;
-                case $data.Boolean: case $data.Integer: case "bool": case "boolean": case "int": case "integer": this.buildFieldNameAndType("INTEGER"); break;
-                case $data.Number: case $data.Date: case "number": case "datetime": case "date": this.buildFieldNameAndType("REAL"); break;
-                case $data.Blob: case "blob": this.buildFieldNameAndType("BLOB"); break;
-                default: this.buildRelations(); break;
+            var typeName = Container.resolveName(this.fld.dataType);
+            var mapping = $data.SqLiteFieldMapping[typeName];
+
+            if (mapping) {
+                this.buildFieldNameAndType(mapping);
+            } else {
+                this.buildRelations();
             }
 
             return this.fieldDef;
@@ -1023,7 +1069,11 @@ $data.Class.define('$data.dbClient.DbCommand', null, null,
         this.buildPrimaryKey = function () {
             if (this.fld.key) {
                 this.fieldDef += " PRIMARY KEY";
-                this.buildAutoIncrement();
+
+                var typeName = Container.resolveName(this.fld.dataType);
+                if (this.provider.supportedAutoincrementKeys[typeName] === true) {
+                    this.buildAutoIncrement();
+                }
             }
             else {
                 this.buildNotNull();
@@ -1094,7 +1144,7 @@ $C('$data.sqLite.SqlCompiler', $data.Expressions.EntityExpressionVisitor, null, 
         this.sortedFilterPart = ['projection', 'from', 'filter', 'order', 'take', 'skip'];
     },
     compile: function () {
-        var sqlBuilder = Container.createSqlBuilder(this.sets, this.entityContext);
+        var sqlBuilder = $data.sqLite.SqlBuilder.create(this.sets, this.entityContext);
         this.Visit(this.queryExpression, sqlBuilder);
 
         if (sqlBuilder.getTextPart('projection') === undefined) {
@@ -1130,7 +1180,7 @@ $C('$data.sqLite.SqlCompiler', $data.Expressions.EntityExpressionVisitor, null, 
         this.Visit(expression.source, sqlBuilder);
         sqlBuilder.selectTextPart('filter');
         sqlBuilder.addText(SqlStatementBlocks.where);
-        var filterCompiler = Container.createSqlFilterCompiler();
+        var filterCompiler = $data.sqLite.SqlFilterCompiler.create();
         filterCompiler.Visit(expression.selector, sqlBuilder);
         return expression;
     },
@@ -1144,7 +1194,7 @@ $C('$data.sqLite.SqlCompiler', $data.Expressions.EntityExpressionVisitor, null, 
             this.addOrders = true;
             sqlBuilder.addText(SqlStatementBlocks.order);
         }
-        var orderCompiler = Container.createSqlOrderCompiler();
+        var orderCompiler = $data.sqLite.SqlOrderCompiler.create();
         orderCompiler.Visit(expression, sqlBuilder);
 
         return expression;
@@ -1161,7 +1211,7 @@ $C('$data.sqLite.SqlCompiler', $data.Expressions.EntityExpressionVisitor, null, 
                 sqlBuilder.addText(SqlStatementBlocks.take); break;
             default: Guard.raise("Not supported nodeType"); break;
         }
-        var pagingCompiler = Container.createSqlPagingCompiler();
+        var pagingCompiler = $data.sqLite.SqlPagingCompiler.create();
         pagingCompiler.Visit(expression, sqlBuilder);
         return expression;
     },
@@ -1170,7 +1220,7 @@ $C('$data.sqLite.SqlCompiler', $data.Expressions.EntityExpressionVisitor, null, 
         sqlBuilder.selectTextPart('projection');
         this.hasProjection = true;
         sqlBuilder.addText(SqlStatementBlocks.select);
-        var projectonCompiler = Container.createSqlProjectionCompiler();
+        var projectonCompiler = $data.sqLite.SqlProjectionCompiler.create();
         projectonCompiler.Visit(expression, sqlBuilder);
     },
     VisitEntitySetExpression: function (expression, sqlBuilder) {
@@ -1197,6 +1247,9 @@ $C('$data.sqLite.SqlCompiler', $data.Expressions.EntityExpressionVisitor, null, 
                     fromPrefix = "T" + temp[0].AliasNumber;
                 }
                 toSet.Association.associationInfo.ReferentialConstraint.forEach(function (constrain, index) {
+                    if(index > 0){
+                        sqlBuilder.addText(" AND ");
+                    }
                     sqlBuilder.addText(fromPrefix + "." + constrain[toSet.Association.associationInfo.From]);
                     sqlBuilder.addText(" = ");
                     sqlBuilder.addText(toPrefix + "." + constrain[toSet.Association.associationInfo.To]);
@@ -1237,7 +1290,7 @@ $C('$data.sqLite.SqlCompiler', $data.Expressions.EntityExpressionVisitor, null, 
 });
 
 $data.Expressions.ExpressionNode.prototype.monitor = function (monitorDefinition, context) {
-    var m = Container.createExpressionMonitor(monitorDefinition);
+    var m = $data.sqLite.SqlExpressionMonitor.create(monitorDefinition);
     return m.Visit(this, context);
 };
 
@@ -1248,24 +1301,34 @@ $C('$data.storageProviders.sqLite.SQLiteCompiler', null, null, {
         var context = { sets: [], infos: [], entityContext: query.context };
 
         var optimizedIncludeExpression = expression.monitor({
-
             MonitorEntitySetExpression: function (expression, context) {
                 if (expression.source instanceof $data.Expressions.EntityContextExpression && context.sets.indexOf(expression) == -1) {
                     this.backupEntitySetExpression = expression;
                 }
             },
+            VisitCountExpression: function (expression, context) {
+                context.hasCountFrameOperator = true;
+                return expression;
+            },
             MutateIncludeExpression: function (expression, context) {
-                var origSelector = expression.selector.value;
-                Container.createCodeExpression("function(it){return it." + origSelector + ";}", null);
+                var result = null;
+                if (context.hasCountFrameOperator) {
+                    result = expression.source;
+                }
+                else {
+                    var origSelector = expression.selector.value;
+                    Container.createCodeExpression("function(it){return it." + origSelector + ";}", null);
 
-                var jsCodeTree = Container.createCodeParser(this.backupEntitySetExpression.source.instance).createExpression("function(it){return it." + origSelector + ";}");
-                var code2entity = Container.createCodeToEntityConverter(this.backupEntitySetExpression.source.instance);
-                var includeSelector = code2entity.Visit(jsCodeTree, { queryParameters: undefined, lambdaParameters: [this.backupEntitySetExpression] });
+                    var jsCodeTree = Container.createCodeParser(this.backupEntitySetExpression.source.instance).createExpression("function(it){return it." + origSelector + ";}");
+                    var code2entity = Container.createCodeToEntityConverter(this.backupEntitySetExpression.source.instance);
+                    var includeSelector = code2entity.Visit(jsCodeTree, { queryParameters: undefined, lambdaParameters: [this.backupEntitySetExpression] });
 
-                var result = Container.createIncludeExpression(expression.source, includeSelector);
+                    result = Container.createIncludeExpression(expression.source, includeSelector);
+                }
                 return result;
             }
         }, context);
+
         var optimizedExpression = optimizedIncludeExpression.monitor({
             MonitorEntitySetExpression: function (expression, context) {
                 if (expression.source instanceof $data.Expressions.EntityContextExpression && context.sets.indexOf(expression) == -1) {
@@ -1290,13 +1353,13 @@ $C('$data.storageProviders.sqLite.SQLiteCompiler', null, null, {
                 if (info.length > 0) {
                     return context.sets[info[0].AliasNumber];
                 }
-                var memberDefinitions = this.backupContextExpression.instance.getType().memberDefinitions.getMember(expression.storageModel.EntitySetReference.name);
+                var memberDefinitions = this.backupContextExpression.instance.getType().memberDefinitions.getMember(expression.storageModel.ItemName);
                 if (!memberDefinitions) {
                     Guard.raise("Context schema error");
                 }
                 var mi = Container.createMemberInfoExpression(memberDefinitions);
                 var result = Container.createEntitySetExpression(this.backupContextExpression, mi);
-                result.instance = this.backupContextExpression.instance[expression.storageModel.EntitySetReference.name];
+                result.instance = this.backupContextExpression.instance[expression.storageModel.ItemName];
                 var aliasNum = context.sets.push(result);
                 context.infos.push({
                     AliasNumber: aliasNum - 1,
@@ -1308,13 +1371,13 @@ $C('$data.storageProviders.sqLite.SQLiteCompiler', null, null, {
             }
         }, context);
 
-        var compiler = Container.createSqlCompiler(optimizedExpression, context);
+        var compiler = $data.sqLite.SqlCompiler.create(optimizedExpression, context);
         compiler.compile();
 
-        var sqlBuilder = Container.createSqlBuilder(this.sets, this.entityContext);
+        var sqlBuilder = $data.sqLite.SqlBuilder.create(this.sets, this.entityContext);
 
         query.modelBinderConfig = {};
-        var modelBinder = Container.createsqLite_ModelBinderCompiler(query, context);
+        var modelBinder = $data.sqLite.sqLite_ModelBinderCompiler.create(query, context);
         modelBinder.Visit(optimizedExpression);
 
         var result = {
@@ -1453,7 +1516,7 @@ $C('$data.sqLite.SqlProjectionCompiler', $data.Expressions.EntityExpressionVisit
         sqlBuilder.addText(opName);
         sqlBuilder.addText(SqlStatementBlocks.beginGroup);
         if (opName === "like") {
-            var builder = Container.createSqlBuilder();
+            var builder = $data.sqLite.SqlBuilder.create();
             this.Visit(expression.parameters[0], builder);
             builder.params.forEach(function (p) {
                 var v = p;
@@ -1622,59 +1685,8 @@ $C('$data.sqLite.SqlProjectionCompiler', $data.Expressions.EntityExpressionVisit
         this.currentObjectLiteralName = tempObjectLiteralName;
     }
 
-}, null);$C('$data.sqLite.ExpressionMonitor', $data.Expressions.EntityExpressionVisitor, null, {
+}, null);$C('$data.sqLite.SqlExpressionMonitor', $data.Expressions.ExpressionMonitor, null, {
     constructor: function (monitorDefinition) {
-
-        this.Visit = function (expression, context) {
-
-            var result = expression;
-            var methodName;
-            if (this.canVisit(expression)) {
-
-                //if (monitorDefinition.FilterExpressionNode) {
-                            
-                //};
-
-                if (monitorDefinition.VisitExpressionNode) {
-                    monitorDefinition.VisitExpressionNode.apply(monitorDefinition, arguments);
-                };
-
-                methodName = "Visit" + expression.getType().name;
-                if (methodName in monitorDefinition) {
-                    result = monitorDefinition[methodName].apply(monitorDefinition, arguments);
-                }
-            }
-
-
-            //apply is about 3-4 times faster then call on webkit
-
-            var args = arguments;
-            if (result !== expression) args = [result, context];
-            result = $data.Expressions.EntityExpressionVisitor.prototype.Visit.apply(this, args);
-
-            args = [result, context];
-
-            if (this.canVisit(result)) {
-                var expressionTypeName = result.getType().name;
-                if (monitorDefinition.MonitorExpressionNode) {
-                    monitorDefinition.MonitorExpressionNode.apply(monitorDefinition, args);
-                }
-                methodName = "Monitor" + expressionTypeName;
-                if (methodName in monitorDefinition) {
-                    monitorDefinition[methodName].apply(monitorDefinition, args);
-                }
-
-                if (monitorDefinition.MutateExpressionNode) {
-                    monitorDefinition.MutateExpressionNode.apply(monitorDefinition, args);
-                }
-                methodName = "Mutate" + expressionTypeName;
-                if (methodName in monitorDefinition) {
-                    result = monitorDefinition[methodName].apply(monitorDefinition, args);
-                }
-
-            }
-            return result;
-        };
         this.VisitIncludeExpression = function (expression, context) {
             var newSourceExpression = this.Visit(expression.source, context);
             monitorDefinition.isMapped = true;
@@ -1743,8 +1755,7 @@ $C('$data.sqLite.SqlProjectionCompiler', $data.Expressions.EntityExpressionVisit
                         sqlBuilder.addText(SqlStatementBlocks.beginGroup);
                         set.forEach(function (item, i) {
                             if (i > 0) sqlBuilder.addText(SqlStatementBlocks.valueSeparator);
-                            var c = Container.createConstantExpression(item);
-                            self.Visit(c, sqlBuilder);
+                            self.Visit(item, sqlBuilder);
                         });
                         sqlBuilder.addText(SqlStatementBlocks.endGroup);
                     } else if (set instanceof $data.Queryable) {
@@ -1783,7 +1794,7 @@ $C('$data.sqLite.SqlProjectionCompiler', $data.Expressions.EntityExpressionVisit
         sqlBuilder.addText(opName);
         sqlBuilder.addText(SqlStatementBlocks.beginGroup);
         if (opName === "like") {
-            var builder = Container.createSqlBuilder([], sqlBuilder.entityContext);
+            var builder = $data.sqLite.SqlBuilder.create([], sqlBuilder.entityContext);
             builder.selectTextPart("fragment");
             this.Visit(expression.parameters[0], builder);
             var fragment = builder.getTextPart("fragment");
@@ -1825,8 +1836,8 @@ $C('$data.sqLite.SqlProjectionCompiler', $data.Expressions.EntityExpressionVisit
     },
 
     VisitConstantExpression: function (expression, sqlBuilder) {
-        var typeNameHintFromValue = Container.getTypeName(expression.value);
-        var value = sqlBuilder.entityContext.storageProvider.fieldConverter.toDb[Container.resolveName(Container.resolveType(typeNameHintFromValue))](expression.value);;
+        //var typeNameHintFromValue = Container.getTypeName(expression.value);
+        var value = sqlBuilder.entityContext.storageProvider.fieldConverter.toDb[Container.resolveName(Container.resolveType(expression.type))](expression.value);;
         sqlBuilder.addParameter(value);
         sqlBuilder.addText(SqlStatementBlocks.parameter);
     },
@@ -1844,12 +1855,15 @@ $C('$data.sqLite.SqlProjectionCompiler', $data.Expressions.EntityExpressionVisit
     constructor: function (query, context) {
         this._query = query;
         this.sqlContext = context;
-        this._sqlBuilder = Container.createSqlBuilder(context.sets, context.entityContext);
+        this._sqlBuilder = $data.sqLite.SqlBuilder.create(context.sets, context.entityContext);
     },
     VisitSingleExpression: function (expression) {
         this._defaultModelBinder(expression);
     },
     VisitSomeExpression: function (expression) {
+        this._defaultModelBinder(expression);
+    },
+    VisitFindExpression: function (expression) {
         this._defaultModelBinder(expression);
     },
     VisitEveryExpression: function (expression) {
